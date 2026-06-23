@@ -148,7 +148,16 @@ select:hover{border-color:var(--blue)}
 /* Chart */
 .chart-wrap{position:relative;width:100%}
 
-/* Topo */
+/* Arousal / Relaxation */
+.verdict-box{flex:1;min-width:140px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-align:center}
+.verdict-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.verdict-value{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.verdict-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.verdict-state{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:8px}
+.state-relax{background:rgba(55,138,221,0.15);color:#378ADD}
+.state-arousal{background:rgba(216,90,48,0.15);color:#D85A30}
+.state-neutral{background:rgba(102,102,170,0.15);color:var(--text2)}
+
 .topo-wrap{display:flex;justify-content:center}
 .topo-wrap svg{max-width:440px;width:100%}
 
@@ -303,6 +312,7 @@ select:hover{border-color:var(--blue)}
       <button class="tab" data-tab="band">Band Power</button>
       <button class="tab" data-tab="ts">시계열</button>
       <button class="tab" data-tab="topo">토포그래피</button>
+      <button class="tab" data-tab="arousal">이완 / 각성</button>
       <button class="tab" data-tab="compare">전후 비교</button>
     </div>
 
@@ -362,6 +372,42 @@ select:hover{border-color:var(--blue)}
         </div>
         <div class="card-title" style="margin-bottom:8px">두피 토포그래피</div>
         <div class="topo-wrap" id="topoMap"></div>
+      </div>
+    </div>
+
+    <!-- Arousal / Relaxation -->
+    <div id="pane-arousal" style="display:none">
+      <!-- 종합 판정 -->
+      <div class="card" id="arousalVerdict">
+        <div class="card-title">종합 판정 <span class="card-badge" id="arousalBadge"></span></div>
+        <div id="verdictContent" style="display:flex;gap:16px;flex-wrap:wrap;align-items:stretch"></div>
+      </div>
+      <!-- 지표 카드 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="card">
+          <div class="card-title">α/β ratio <span style="font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(후두부·두정부 α ÷ 전두·중심부 β)</span></div>
+          <div class="chart-wrap" style="height:200px"><canvas id="abRatioChart" role="img" aria-label="Alpha beta ratio"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">θ/β ratio <span style="font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(전두정중선 θ ÷ 전두·중심부 β)</span></div>
+          <div class="chart-wrap" style="height:200px"><canvas id="tbRatioChart" role="img" aria-label="Theta beta ratio"></canvas></div>
+        </div>
+      </div>
+      <!-- Engagement Index + α asymmetry -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="card">
+          <div class="card-title">Engagement Index <span style="font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(β ÷ (α+θ), 전두부 기준)</span></div>
+          <div class="chart-wrap" style="height:200px"><canvas id="engChart" role="img" aria-label="Engagement index"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">α Frontal Asymmetry <span style="font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(ln F4α − ln F3α)</span></div>
+          <div class="chart-wrap" style="height:200px"><canvas id="asymChart" role="img" aria-label="Frontal alpha asymmetry"></canvas></div>
+        </div>
+      </div>
+      <!-- 시간에 따른 α/β 변화 -->
+      <div class="card">
+        <div class="card-title">α/β ratio 시간 추이 <span style="font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(2초 epoch 슬라이딩)</span></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="abTimeChart" role="img" aria-label="Alpha beta ratio over time"></canvas></div>
       </div>
     </div>
 
@@ -566,7 +612,7 @@ document.querySelectorAll('.tab').forEach(t=>{
   t.onclick=()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
-    ['psd','band','ts','topo','compare'].forEach(p=>$('pane-'+p).style.display='none');
+    ['psd','band','ts','topo','arousal','compare'].forEach(p=>$('pane-'+p).style.display='none');
     $('pane-'+t.dataset.tab).style.display='';
     $('tsCtrl').style.display=t.dataset.tab==='ts'?'':'none';
     renderAll();
@@ -759,11 +805,12 @@ function dc(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
 function renderAll(){
   const at=document.querySelector('.tab.active')?.dataset.tab||'psd';
   const badge=G.isPP?'<span class="card-badge badge-clean">CLEAN</span>':'<span class="card-badge badge-raw">RAW</span>';
-  ['psdBadge','bandBadge','tsBadge','topoBadge'].forEach(id=>{const el=$(id);if(el)el.innerHTML=badge});
+  ['psdBadge','bandBadge','tsBadge','topoBadge','arousalBadge'].forEach(id=>{const el=$(id);if(el)el.innerHTML=badge});
   if(at==='psd')renderPSD();
   if(at==='band')renderBand();
   if(at==='ts')renderTS();
   if(at==='topo')renderTopo();
+  if(at==='arousal')renderArousal();
   if(at==='compare')renderCompare();
 }
 
@@ -845,6 +892,161 @@ function renderTopo(){
   svg+=`<text x="${cx}" y="${H-12}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.45)" font-family="'Inter',system-ui">${BANDS[band].label}</text>`;
   svg+=`</svg>`;
   $('topoMap').innerHTML=svg;
+}
+
+// ── Arousal / Relaxation ──
+function renderArousal(){
+  const d=getActiveData();
+
+  // 채널 분류
+  const occipital=['O1','Oz','O2'];
+  const parietal=['P3','Pz','P4'];
+  const frontal=['F3','Fz','F4','Fp1','Fpz','Fp2'];
+  const central=['C3','Cz','C4'];
+  const fmidline=['Fz','Cz']; // frontal midline θ
+
+  function chPow(chs,lo,hi){
+    const avail=chs.filter(c=>G.channels.includes(c));
+    if(!avail.length)return 0;
+    return avail.reduce((s,ch)=>{const{freqs,psd}=getPSD(ch,d);return s+getBP(psd,freqs,lo,hi)},0)/avail.length;
+  }
+
+  const alphaOcc  = chPow(occipital,8,13);
+  const alphaPar  = chPow(parietal,8,13);
+  const alphaRelax= (alphaOcc+alphaPar)/2;
+  const betaFront = chPow(frontal,13,30);
+  const betaCent  = chPow(central,13,30);
+  const betaArousal=(betaFront+betaCent)/2;
+  const thetaFmid = chPow(fmidline,4,8);
+  const alphaFront= chPow(frontal,8,13);
+  const thetaFront= chPow(frontal,4,8);
+
+  const abRatio   = alphaRelax/(betaArousal||1e-10);
+  const tbRatio   = thetaFmid/(betaArousal||1e-10);
+  const engIdx    = betaFront/((alphaFront+thetaFront)||1e-10);
+
+  // F3·F4 asymmetry
+  let asym=null;
+  if(G.channels.includes('F3')&&G.channels.includes('F4')){
+    const{freqs:ff3,psd:pf3}=getPSD('F3',d);
+    const{freqs:ff4,psd:pf4}=getPSD('F4',d);
+    const a3=getBP(pf3,ff3,8,13),a4=getBP(pf4,ff4,8,13);
+    if(a3>0&&a4>0)asym=Math.log(a4)-Math.log(a3);
+  }
+
+  // ── 종합 판정 ──
+  // α/β > 1.5 → 이완 경향, < 0.7 → 각성 경향
+  let state,stateClass,stateDesc;
+  if(abRatio>1.5){state='이완';stateClass='state-relax';stateDesc='후두·두정부 α 우세. 외부 자극 처리 부하 낮음.';}
+  else if(abRatio<0.7){state='각성';stateClass='state-arousal';stateDesc='전두·중심부 β 우세. 인지 활성 또는 주의 집중 상태.';}
+  else{state='중립';stateClass='state-neutral';stateDesc='α·β 균형 상태. 안정적 각성(relaxed alertness).';}
+
+  const asymDesc=asym==null?'—':asym>0.1?'우측 전두 α 우세 (접근 동기 경향)':asym<-0.1?'좌측 전두 α 우세 (회피 동기 경향)':'좌우 대칭';
+
+  $('verdictContent').innerHTML=`
+    <div class="verdict-box">
+      <div class="verdict-label">현재 상태</div>
+      <div class="verdict-state ${stateClass}">${state}</div>
+      <div class="verdict-desc">${stateDesc}</div>
+    </div>
+    <div class="verdict-box">
+      <div class="verdict-label">α/β ratio</div>
+      <div class="verdict-value" style="color:var(--blue)">${abRatio.toFixed(2)}</div>
+      <div class="verdict-desc">≥1.5 이완 / ≤0.7 각성</div>
+    </div>
+    <div class="verdict-box">
+      <div class="verdict-label">θ/β ratio</div>
+      <div class="verdict-value" style="color:var(--teal)">${tbRatio.toFixed(2)}</div>
+      <div class="verdict-desc">전두정중선 θ 기반<br>높을수록 내적 집중·졸음</div>
+    </div>
+    <div class="verdict-box">
+      <div class="verdict-label">Engagement</div>
+      <div class="verdict-value" style="color:var(--coral)">${engIdx.toFixed(2)}</div>
+      <div class="verdict-desc">높을수록 인지 각성<br>β÷(α+θ)</div>
+    </div>
+    <div class="verdict-box">
+      <div class="verdict-label">α Asymmetry</div>
+      <div class="verdict-value" style="font-size:18px;color:var(--purple)">${asym!=null?asym.toFixed(3):'N/A'}</div>
+      <div class="verdict-desc">${asymDesc}</div>
+    </div>`;
+
+  // ── 차트들 ──
+  // 1) α/β ratio — 채널별
+  dc('abRatioChart');
+  const abChs=G.channels.filter(c=>TOPO_POS[c]);
+  const abVals=abChs.map(ch=>{
+    const{freqs,psd}=getPSD(ch,d);
+    const a=getBP(psd,freqs,8,13),b=getBP(psd,freqs,13,30);
+    return parseFloat((a/(b||1e-10)).toFixed(3));
+  });
+  const abColors=abVals.map(v=>v>1.5?'rgba(55,138,221,0.75)':v<0.7?'rgba(216,90,48,0.75)':'rgba(127,119,221,0.6)');
+  charts['abRatioChart']=new Chart($('abRatioChart'),{type:'bar',data:{labels:abChs,datasets:[{label:'α/β',data:abVals,backgroundColor:abColors,borderWidth:0,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},annotation:{}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{title:{display:true,text:'α/β',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+
+  // 2) θ/β ratio — 채널별
+  dc('tbRatioChart');
+  const tbVals=abChs.map(ch=>{
+    const{freqs,psd}=getPSD(ch,d);
+    const t=getBP(psd,freqs,4,8),b=getBP(psd,freqs,13,30);
+    return parseFloat((t/(b||1e-10)).toFixed(3));
+  });
+  charts['tbRatioChart']=new Chart($('tbRatioChart'),{type:'bar',data:{labels:abChs,datasets:[{label:'θ/β',data:tbVals,backgroundColor:'rgba(29,158,117,0.65)',borderWidth:0,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{title:{display:true,text:'θ/β',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+
+  // 3) Engagement index — 채널별
+  dc('engChart');
+  const engVals=abChs.map(ch=>{
+    const{freqs,psd}=getPSD(ch,d);
+    const a=getBP(psd,freqs,8,13),t=getBP(psd,freqs,4,8),b=getBP(psd,freqs,13,30);
+    return parseFloat((b/((a+t)||1e-10)).toFixed(3));
+  });
+  charts['engChart']=new Chart($('engChart'),{type:'bar',data:{labels:abChs,datasets:[{label:'EI',data:engVals,backgroundColor:'rgba(216,90,48,0.65)',borderWidth:0,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{title:{display:true,text:'β÷(α+θ)',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+
+  // 4) α Frontal Asymmetry (F3 vs F4 vs F7 vs F8)
+  dc('asymChart');
+  const asymChs=[['F3','F4'],['F7','F8'],['T3','T4']].filter(p=>p.every(c=>G.channels.includes(c)));
+  const asymLabels=asymChs.map(p=>p.join('→'));
+  const asymVals=asymChs.map(([l,r])=>{
+    const{freqs:fl,psd:pl}=getPSD(l,d);const{freqs:fr,psd:pr}=getPSD(r,d);
+    const al=getBP(pl,fl,8,13),ar=getBP(pr,fr,8,13);
+    return(al>0&&ar>0)?parseFloat((Math.log(ar)-Math.log(al)).toFixed(4)):0;
+  });
+  const asymColors=asymVals.map(v=>v>0.05?'rgba(55,138,221,0.7)':v<-0.05?'rgba(216,90,48,0.7)':'rgba(127,119,221,0.5)');
+  charts['asymChart']=new Chart($('asymChart'),{type:'bar',data:{labels:asymLabels,datasets:[{label:'ln(R)−ln(L)',data:asymVals,backgroundColor:asymColors,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{display:false}},y:{title:{display:true,text:'ln(R)−ln(L)',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+
+  // 5) α/β ratio 시간 추이 (2초 epoch)
+  dc('abTimeChart');
+  const epochSec=2,epochSamp=epochSec*G.sr;
+  const seg0=G.rawData[G.channels[0]];
+  const totalSamp=seg0.length;
+  const timeLabels=[],abTimeSeries=[];
+  const occAvail=occipital.filter(c=>G.channels.includes(c));
+  const frAvail=frontal.filter(c=>G.channels.includes(c)).concat(central.filter(c=>G.channels.includes(c)));
+  for(let s=0;s+epochSamp<=totalSamp;s+=epochSamp){
+    const t=(s/G.sr).toFixed(0);
+    timeLabels.push(t+'s');
+    // α 후두부
+    let sumA=0;
+    occAvail.forEach(ch=>{
+      const sl=d[ch].slice(s,s+epochSamp),uv=new Float64Array(sl.length);
+      for(let i=0;i<sl.length;i++)uv[i]=sl[i]/1000;
+      const m=uv.reduce((a,b)=>a+b,0)/uv.length;
+      const c=uv.map(v=>v-m);
+      const p=fft(c);const f=[];for(let i=0;i<p.length;i++)f.push(i*G.sr/p.length/2);
+      sumA+=getBP(p,f,8,13);
+    });
+    // β 전두+중심
+    let sumB=0;
+    frAvail.forEach(ch=>{
+      const sl=d[ch].slice(s,s+epochSamp),uv=new Float64Array(sl.length);
+      for(let i=0;i<sl.length;i++)uv[i]=sl[i]/1000;
+      const m=uv.reduce((a,b)=>a+b,0)/uv.length;
+      const c=uv.map(v=>v-m);
+      const p=fft(c);const f=[];for(let i=0;i<p.length;i++)f.push(i*G.sr/p.length/2);
+      sumB+=getBP(p,f,13,30);
+    });
+    const ra=(sumA/(occAvail.length||1))/(sumB/(frAvail.length||1)||1e-10);
+    abTimeSeries.push(parseFloat(ra.toFixed(3)));
+  }
+  charts['abTimeChart']=new Chart($('abTimeChart'),{type:'line',data:{labels:timeLabels,datasets:[{label:'α/β ratio',data:abTimeSeries,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#378ADD',fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'시간 (s)',color:TC,font:{size:10}},ticks:{color:TC,maxTicksLimit:15,font:{size:9}},grid:{color:GC}},y:{title:{display:true,text:'α/β',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
 }
 
 function renderCompare(){
