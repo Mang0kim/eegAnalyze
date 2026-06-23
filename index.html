@@ -18,6 +18,9 @@
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
 .app{display:grid;grid-template-columns:270px 1fr;grid-template-rows:52px 1fr;min-height:100vh}
 header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--bg2);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100}
+.hdr-credit{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
+.hdr-credit-main{font-size:11px;color:var(--text2);letter-spacing:.01em}
+.hdr-credit-ver{font-size:10px;color:var(--text3);margin-top:1px}
 .logo{font-size:15px;font-weight:600;color:var(--text)}.logo span{color:var(--blue)}
 .logo-sub{font-size:11px;color:var(--text3);margin-left:4px}
 header .sp{flex:1}
@@ -142,6 +145,10 @@ select:hover{border-color:var(--blue)}
 <div class="app">
 <header>
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
+  <div class="hdr-credit">
+    <div class="hdr-credit-main">국민대학교 기술과디자인연구센터 김창수 제작</div>
+    <div class="hdr-credit-ver">v1.0.2</div>
+  </div>
   <div class="sp"></div>
   <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
 </header>
