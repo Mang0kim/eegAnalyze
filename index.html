@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EEG Frequency Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e10;--bg2:#18181c;--bg3:#222228;--bg4:#2a2a32;
+  --border:#333344;--border2:#44445a;
+  --text:#e8e8f0;--text2:#9999bb;--text3:#6666aa;
+  --blue:#378ADD;--blue-dim:#1a3a5c;
+  --purple:#7F77DD;--purple-dim:#2a2850;
+  --teal:#1D9E75;--teal-dim:#0a3028;
+  --coral:#D85A30;--coral-dim:#3a1a0a;
+  --pink:#D4537E;--pink-dim:#38102a;
+  --amber:#BA7517;--amber-dim:#302010;
+  --radius:8px;--radius-lg:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+a{color:var(--blue)}
+
+/* Layout */
+.app{display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;min-height:100vh}
+header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 24px;background:var(--bg2);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
+.logo span{color:var(--blue)}
+.logo-sub{font-size:11px;color:var(--text3);margin-left:4px}
+header .spacer{flex:1}
+.header-meta{font-size:11px;color:var(--text3)}
+
+sidebar{display:flex;flex-direction:column;gap:0;background:var(--bg2);border-right:0.5px solid var(--border);padding:16px 0;overflow-y:auto}
+.sidebar-section{padding:0 16px;margin-bottom:20px}
+.sidebar-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+
+main{padding:24px;overflow-y:auto;background:var(--bg)}
+
+/* Drop zone */
+.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:28px 20px;text-align:center;cursor:pointer;color:var(--text3);transition:all .2s;background:var(--bg2)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--blue);color:var(--text2);background:var(--blue-dim)}
+.drop-icon{font-size:28px;margin-bottom:8px}
+.drop-title{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:4px}
+.drop-sub{font-size:11px}
+
+/* Status */
+.status{font-size:12px;color:var(--text3);margin-top:8px;min-height:16px;padding:0 2px}
+.status.ok{color:var(--teal)}
+.status.err{color:var(--coral)}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.metric-unit{font-size:11px;color:var(--text3);margin-left:3px}
+
+/* Tab bar */
+.tab-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:20px;gap:0}
+.tab{padding:9px 18px;font-size:13px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+
+/* Cards */
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:14px}
+
+/* Channel select */
+.ch-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.ch-btn{padding:3px 9px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s;font-family:inherit}
+.ch-btn:hover{border-color:var(--blue);color:var(--blue)}
+.ch-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ch-btn.active-multi{background:transparent;color:var(--blue);border-color:var(--blue)}
+
+/* Sliders */
+.slider-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3);margin-bottom:8px}
+.slider-row label{min-width:60px}
+.slider-row span{min-width:38px;text-align:right;color:var(--text2);font-weight:500}
+input[type=range]{-webkit-appearance:none;width:100%;flex:1;height:3px;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue);border:2px solid var(--bg);cursor:pointer}
+select{background:var(--bg3);color:var(--text);border:0.5px solid var(--border2);border-radius:var(--radius);padding:5px 10px;font-family:inherit;font-size:12px;cursor:pointer;outline:none}
+select:hover{border-color:var(--blue)}
+
+/* Band cards */
+.band-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.band-card{border-radius:var(--radius);padding:12px;text-align:center;border:0.5px solid transparent}
+.band-name{font-size:12px;font-weight:600;margin-bottom:1px}
+.band-range{font-size:10px;opacity:.6;margin-bottom:6px}
+.band-pct{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.band-bar{height:3px;border-radius:2px;margin-top:6px;transition:width .4s}
+
+/* Chart wrapper */
+.chart-wrap{position:relative;width:100%}
+
+/* Topo */
+.topo-wrap{display:flex;justify-content:center}
+.topo-wrap svg{max-width:460px;width:100%}
+
+/* Empty state */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;color:var(--text3);gap:8px;text-align:center}
+.empty-icon{font-size:36px;opacity:.4}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Responsive */
+@media(max-width:800px){
+  .app{grid-template-columns:1fr}
+  sidebar{display:none}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+
+/* SVG text */
+.topo-label{fill:rgba(255,255,255,0.95);font-family:'Inter',system-ui,sans-serif}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
+  <div class="spacer"></div>
+  <div class="header-meta" id="headerMeta">파일을 로드하세요</div>
+</header>
+
+<sidebar>
+  <div class="sidebar-section">
+    <div class="sidebar-label">데이터 로드</div>
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">↑</div>
+      <div class="drop-title">CSV 파일 업로드</div>
+      <div class="drop-sub">드래그 & 드롭 또는 클릭</div>
+      <input type="file" id="fileInput" accept=".csv" style="display:none">
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="sidebar-section" id="ctrlSection" style="display:none">
+    <div class="sidebar-label">채널 선택</div>
+    <div class="ch-grid" id="chSelect"></div>
+
+    <div class="sidebar-label" style="margin-top:16px">분석 구간</div>
+    <div class="slider-row">
+      <label>시작</label>
+      <input type="range" id="segStart" min="0" max="120" value="0" step="1">
+      <span id="segStartLbl">0s</span>
+    </div>
+    <div class="slider-row">
+      <label>끝</label>
+      <input type="range" id="segEnd" min="0" max="120" value="120" step="1">
+      <span id="segEndLbl">120s</span>
+    </div>
+
+    <div class="sidebar-label" style="margin-top:16px">주파수 범위</div>
+    <div class="slider-row">
+      <label>최대</label>
+      <input type="range" id="freqMax" min="10" max="60" value="50" step="5">
+      <span id="freqMaxLbl">50 Hz</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="tsCtrl" style="display:none">
+    <div class="sidebar-label">시계열 뷰</div>
+    <div class="slider-row">
+      <label>윈도우</label>
+      <input type="range" id="tsWindow" min="1" max="30" value="5" step="1">
+      <span id="tsWindowLbl">5s</span>
+    </div>
+    <div class="slider-row">
+      <label>오프셋</label>
+      <input type="range" id="tsOffset" min="0" max="120" value="0" step="1">
+      <span id="tsOffsetLbl">0s</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="topoCtrl" style="display:none">
+    <div class="sidebar-label">토포그래피</div>
+    <select id="topoBand">
+      <option value="delta">δ Delta  (0.5–4 Hz)</option>
+      <option value="theta">θ Theta  (4–8 Hz)</option>
+      <option value="alpha" selected>α Alpha  (8–13 Hz)</option>
+      <option value="beta">β Beta   (13–30 Hz)</option>
+      <option value="gamma">γ Gamma  (30–45 Hz)</option>
+    </select>
+  </div>
+</sidebar>
+
+<main>
+  <!-- empty state -->
+  <div class="empty" id="emptyState">
+    <div class="empty-icon">⟁</div>
+    <div style="font-weight:500;color:var(--text2)">EEG 데이터를 로드하세요</div>
+    <div style="font-size:12px">BS24 포맷 CSV · 탭 구분자 · 250 Hz</div>
+  </div>
+
+  <!-- content -->
+  <div id="mainContent" style="display:none">
+    <div class="metrics" id="metricCards"></div>
+
+    <div class="tab-bar">
+      <button class="tab active" data-tab="psd">Power Spectrum</button>
+      <button class="tab" data-tab="band">Band Power</button>
+      <button class="tab" data-tab="ts">시계열</button>
+      <button class="tab" data-tab="topo">토포그래피</button>
+    </div>
+
+    <!-- PSD -->
+    <div id="pane-psd">
+      <div class="card">
+        <div class="card-title">Power Spectral Density</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="psdChart" role="img" aria-label="Power spectral density chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Band -->
+    <div id="pane-band" style="display:none">
+      <div class="band-row" id="bandGrid"></div>
+      <div class="card">
+        <div class="card-title">밴드별 파워 비율</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="bandChart" role="img" aria-label="EEG band power bar chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- TS -->
+    <div id="pane-ts" style="display:none">
+      <div class="card">
+        <div class="card-title">시계열 파형</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="tsChart" role="img" aria-label="EEG time series waveform"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topo -->
+    <div id="pane-topo" style="display:none">
+      <div class="card">
+        <div class="card-title">두피 토포그래피</div>
+        <div class="topo-wrap" id="topoMap"></div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+const BANDS={
+  delta:{label:'δ Delta',short:'δ',range:[0.5,4],color:'#7F77DD',bg:'rgba(127,119,221,0.12)',border:'rgba(127,119,221,0.3)'},
+  theta:{label:'θ Theta',short:'θ',range:[4,8],color:'#1D9E75',bg:'rgba(29,158,117,0.12)',border:'rgba(29,158,117,0.3)'},
+  alpha:{label:'α Alpha',short:'α',range:[8,13],color:'#378ADD',bg:'rgba(55,138,221,0.12)',border:'rgba(55,138,221,0.3)'},
+  beta:{label:'β Beta',short:'β',range:[13,30],color:'#D85A30',bg:'rgba(216,90,48,0.12)',border:'rgba(216,90,48,0.3)'},
+  gamma:{label:'γ Gamma',short:'γ',range:[30,45],color:'#D4537E',bg:'rgba(212,83,126,0.12)',border:'rgba(212,83,126,0.3)'}
+};
+const CH_COLORS=['#378ADD','#D85A30','#1D9E75','#D4537E','#BA7517','#7F77DD','#E24B4A','#639922','#4ECDC4','#FFB347'];
+const TOPO_POS={
+  Fp1:{x:0.38,y:0.10},Fpz:{x:0.5,y:0.08},Fp2:{x:0.62,y:0.10},
+  F7:{x:0.18,y:0.27},F3:{x:0.35,y:0.24},Fz:{x:0.5,y:0.22},F4:{x:0.65,y:0.24},F8:{x:0.82,y:0.27},
+  T3:{x:0.07,y:0.50},C3:{x:0.28,y:0.47},Cz:{x:0.5,y:0.45},C4:{x:0.72,y:0.47},T4:{x:0.93,y:0.50},
+  T5:{x:0.18,y:0.72},P3:{x:0.35,y:0.69},Pz:{x:0.5,y:0.67},P4:{x:0.65,y:0.69},T6:{x:0.82,y:0.72},
+  O1:{x:0.38,y:0.88},Oz:{x:0.5,y:0.90},O2:{x:0.62,y:0.88}
+};
+
+let G={sr:250,data:{},channels:[],selectedCh:[],duration:0,segStart:0,segEnd:0};
+let charts={};
+
+const $=id=>document.getElementById(id);
+
+// File loading
+$('dropZone').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=e=>loadFile(e.target.files[0]);
+const dz=$('dropZone');
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
+dz.ondragleave=()=>dz.classList.remove('over');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');loadFile(e.dataTransfer.files[0])};
+
+function loadFile(file){
+  if(!file)return;
+  setStatus('읽는 중...','');
+  const r=new FileReader();
+  r.onload=e=>parseCSV(e.target.result,file.name);
+  r.readAsText(file);
+}
+
+function parseCSV(text,fname){
+  try{
+    const lines=text.split('\n').filter(l=>l.trim());
+    const meta=(lines[1]||'').split('\t');
+    const sr=parseInt(meta[1])||250;
+    const headers=(lines[2]||'').split('\t');
+    const eegCols=[];
+    headers.forEach((h,i)=>{if(h.includes('EEG'))eegCols.push({name:h.split(':')[2]||h,idx:i})});
+    if(!eegCols.length)throw new Error('EEG 채널을 찾을 수 없습니다');
+    const rawRows=lines.slice(3).filter(l=>l.trim());
+    const data={};
+    eegCols.forEach(c=>data[c.name]=new Float64Array(rawRows.length));
+    rawRows.forEach((row,ri)=>{
+      const cols=row.split('\t');
+      eegCols.forEach(c=>{data[c.name][ri]=parseFloat(cols[c.idx])||0});
+    });
+    G={sr,data,channels:eegCols.map(c=>c.name),selectedCh:[eegCols[0].name],
+       duration:rawRows.length/sr,segStart:0,segEnd:rawRows.length/sr};
+    setStatus(`✓ ${fname}  |  ${G.channels.length}채널  ${G.duration.toFixed(1)}s  ${sr}Hz`,'ok');
+    $('headerMeta').textContent=`${fname}  ·  ${G.channels.length}ch  ·  ${G.duration.toFixed(1)}s`;
+    initUI();
+  }catch(err){setStatus('오류: '+err.message,'err')}
+}
+
+function setStatus(msg,cls){
+  const el=$('status');
+  el.textContent=msg;
+  el.className='status '+(cls||'');
+}
+
+function initUI(){
+  $('emptyState').style.display='none';
+  $('mainContent').style.display='';
+  $('ctrlSection').style.display='';
+  renderMetrics();
+  renderChSelect();
+  initSliders();
+  renderAll();
+}
+
+function renderMetrics(){
+  const n=G.channels[0],d=G.data[n];
+  $('metricCards').innerHTML=`
+    <div class="metric"><div class="metric-label">채널</div><div class="metric-value">${G.channels.length}<span class="metric-unit">ch</span></div></div>
+    <div class="metric"><div class="metric-label">샘플링 레이트</div><div class="metric-value">${G.sr}<span class="metric-unit">Hz</span></div></div>
+    <div class="metric"><div class="metric-label">측정 시간</div><div class="metric-value">${G.duration.toFixed(1)}<span class="metric-unit">s</span></div></div>
+    <div class="metric"><div class="metric-label">총 샘플</div><div class="metric-value">${(d.length/1000).toFixed(0)}<span class="metric-unit">k</span></div></div>`;
+}
+
+function renderChSelect(){
+  const el=$('chSelect');
+  el.innerHTML='';
+  G.channels.forEach(ch=>{
+    const btn=document.createElement('button');
+    const isSel=G.selectedCh.includes(ch);
+    btn.className='ch-btn'+(isSel?(G.selectedCh.length>1?' active-multi':' active'):'');
+    btn.textContent=ch;
+    btn.onclick=()=>{
+      if(G.selectedCh.includes(ch)){
+        if(G.selectedCh.length>1)G.selectedCh=G.selectedCh.filter(c=>c!==ch);
+      }else{G.selectedCh.push(ch)}
+      renderChSelect();renderAll();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function initSliders(){
+  const max=Math.floor(G.duration);
+  const ss=$('segStart'),se=$('segEnd');
+  ss.max=max;ss.value=0;se.max=max;se.value=max;
+  $('segStartLbl').textContent='0s';$('segEndLbl').textContent=max+'s';
+  $('tsOffset').max=max;
+  ss.oninput=()=>{G.segStart=Math.min(parseInt(ss.value),G.segEnd-1);$('segStartLbl').textContent=G.segStart+'s';renderAll()};
+  se.oninput=()=>{G.segEnd=Math.max(parseInt(se.value),G.segStart+1);$('segEndLbl').textContent=G.segEnd+'s';renderAll()};
+  $('freqMax').oninput=()=>{$('freqMaxLbl').textContent=$('freqMax').value+' Hz';renderPSD()};
+  $('tsWindow').oninput=()=>{$('tsWindowLbl').textContent=$('tsWindow').value+'s';renderTS()};
+  $('tsOffset').oninput=()=>{$('tsOffsetLbl').textContent=$('tsOffset').value+'s';renderTS()};
+  $('topoBand').onchange=renderTopo;
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['psd','band','ts','topo'].forEach(p=>$('pane-'+p).style.display='none');
+    $('pane-'+t.dataset.tab).style.display='';
+    $('tsCtrl').style.display=t.dataset.tab==='ts'?'':'none';
+    $('topoCtrl').style.display=t.dataset.tab==='topo'?'':'none';
+    renderAll();
+  };
+});
+
+function renderAll(){
+  const at=document.querySelector('.tab.active')?.dataset.tab||'psd';
+  if(at==='psd')renderPSD();
+  if(at==='band')renderBand();
+  if(at==='ts')renderTS();
+  if(at==='topo')renderTopo();
+}
+
+// FFT (Cooley-Tukey)
+function fft(re){
+  const n=Math.pow(2,Math.floor(Math.log2(re.length)));
+  const x=re.slice(0,n),im=new Float64Array(n);
+  for(let len=2;len<=n;len<<=1){
+    const ang=-2*Math.PI/len;
+    for(let i=0;i<n;i+=len){
+      for(let j=0;j<len/2;j++){
+        const a=i+j,b=i+j+len/2;
+        const tr=Math.cos(ang*j)*x[b]-Math.sin(ang*j)*im[b];
+        const ti=Math.sin(ang*j)*x[b]+Math.cos(ang*j)*im[b];
+        x[b]=x[a]-tr;im[b]=im[a]-ti;x[a]+=tr;im[a]+=ti;
+      }
+    }
+  }
+  const psd=new Float64Array(n/2);
+  for(let i=0;i<n/2;i++)psd[i]=(x[i]*x[i]+im[i]*im[i])/n;
+  return psd;
+}
+
+function getSegData(ch){
+  const arr=G.data[ch];
+  const s=Math.floor(G.segStart*G.sr);
+  const e=Math.min(arr.length,Math.floor(G.segEnd*G.sr));
+  return arr.slice(s,e);
+}
+
+function getPSD(ch){
+  const seg=getSegData(ch);
+  const mean=seg.reduce((a,b)=>a+b,0)/seg.length;
+  const c=new Float64Array(seg.length);
+  for(let i=0;i<seg.length;i++)c[i]=seg[i]-mean;
+  const psd=fft(c);
+  const freqs=[];
+  for(let i=0;i<psd.length;i++)freqs.push(i*G.sr/psd.length/2);
+  return{freqs,psd};
+}
+
+function getBandPower(psd,freqs,lo,hi){
+  let s=0,n=0;
+  for(let i=0;i<freqs.length;i++){if(freqs[i]>=lo&&freqs[i]<hi){s+=psd[i];n++}}
+  return n>0?s/n:0;
+}
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
+
+// Grid defaults
+const GRID_COLOR='rgba(255,255,255,0.06)';
+const TICK_COLOR='rgba(255,255,255,0.4)';
+
+function renderPSD(){
+  destroyChart('psd');
+  const maxF=parseInt($('freqMax').value)||50;
+  const datasets=[];
+  G.selectedCh.forEach((ch,i)=>{
+    const{freqs,psd}=getPSD(ch);
+    const labels=[],vals=[];
+    freqs.forEach((f,j)=>{if(f<=maxF){labels.push(f.toFixed(1));vals.push(parseFloat((Math.log10(psd[j]+1e-10)*10).toFixed(2)))}});
+    if(i===0)window._psdLabels=labels;
+    datasets.push({label:ch,data:vals,borderColor:CH_COLORS[i%CH_COLORS.length],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.2});
+  });
+  charts['psd']=new Chart($('psdChart'),{
+    type:'line',
+    data:{labels:window._psdLabels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:datasets.length>1,labels:{color:TICK_COLOR,font:{size:11},boxWidth:10,padding:12}}},
+      scales:{
+        x:{title:{display:true,text:'주파수 (Hz)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,maxTicksLimit:12,font:{size:10}},grid:{color:GRID_COLOR}},
+        y:{title:{display:true,text:'Power (dB)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,font:{size:10}},grid:{color:GRID_COLOR}}
+      }
+    }
+  });
+}
+
+function renderBand(){
+  destroyChart('band');
+  const ch=G.selectedCh[0];
+  const{freqs,psd}=getPSD(ch);
+  const bkeys=Object.keys(BANDS);
+  const powers=bkeys.map(b=>getBandPower(psd,freqs,BANDS[b].range[0],BANDS[b].range[1]));
+  const total=powers.reduce((a,b)=>a+b,0)||1;
+  const pcts=powers.map(p=>(p/total)*100);
+  const maxPct=Math.max(...pcts);
+
+  $('bandGrid').innerHTML=bkeys.map((b,i)=>`
+    <div class="band-card" style="background:${BANDS[b].bg};border-color:${BANDS[b].border}">
+      <div class="band-name" style="color:${BANDS[b].color}">${BANDS[b].label}</div>
+      <div class="band-range" style="color:${BANDS[b].color}">${BANDS[b].range[0]}–${BANDS[b].range[1]} Hz</div>
+      <div class="band-pct" style="color:${BANDS[b].color}">${pcts[i].toFixed(1)}<span style="font-size:13px">%</span></div>
+      <div class="band-bar" style="background:${BANDS[b].color};width:${(pcts[i]/maxPct*100).toFixed(0)}%"></div>
+    </div>`).join('');
+
+  charts['band']=new Chart($('bandChart'),{
+    type:'bar',
+    data:{
+      labels:bkeys.map(b=>BANDS[b].label),
+      datasets:[{label:'파워 비율 (%)',data:pcts.map(p=>parseFloat(p.toFixed(2))),
+        backgroundColor:bkeys.map(b=>BANDS[b].bg.replace('0.12','0.7')),
+        borderColor:bkeys.map(b=>BANDS[b].color),
+        borderWidth:1,borderRadius:4}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{title:{display:true,text:'%',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,font:{size:10}},grid:{color:GRID_COLOR}},
+        x:{ticks:{color:TICK_COLOR,font:{size:12}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderTS(){
+  destroyChart('ts');
+  const win=parseInt($('tsWindow').value)||5;
+  const off=parseInt($('tsOffset').value)||0;
+  const arr0=Object.values(G.data)[0]||[];
+  const s=Math.floor(off*G.sr);
+  const e=Math.min(arr0.length,s+win*G.sr);
+  const step=Math.max(1,Math.floor((e-s)/1200));
+  const labels=[];
+  for(let i=s;i<e;i+=step)labels.push((i/G.sr).toFixed(2));
+  const datasets=G.selectedCh.map((ch,i)=>{
+    const arr=G.data[ch];
+    const vals=[];
+    for(let j=s;j<e;j+=step)vals.push(parseFloat((arr[j]/1000).toFixed(3)));
+    return{label:ch,data:vals,borderColor:CH_COLORS[i%CH_COLORS.length],backgroundColor:'transparent',borderWidth:1.2,pointRadius:0,tension:0};
+  });
+  charts['ts']=new Chart($('tsChart'),{
+    type:'line',data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:datasets.length>1,labels:{color:TICK_COLOR,font:{size:11},boxWidth:10,padding:12}}},
+      scales:{
+        x:{title:{display:true,text:'시간 (s)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,maxTicksLimit:10,font:{size:10}},grid:{color:GRID_COLOR}},
+        y:{title:{display:true,text:'진폭 (µV)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,font:{size:10}},grid:{color:GRID_COLOR}}
+      }
+    }
+  });
+}
+
+function topoColor(norm){
+  const stops=[[0,[83,74,183]],[0.25,[55,138,221]],[0.5,[60,80,60]],[0.75,[216,90,48]],[1,[220,50,50]]];
+  let lo=stops[0],hi=stops[stops.length-1];
+  for(let i=0;i<stops.length-1;i++){if(norm>=stops[i][0]&&norm<=stops[i+1][0]){lo=stops[i];hi=stops[i+1];break}}
+  const t=(norm-lo[0])/(hi[0]-lo[0]||1);
+  const r=Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*t);
+  const g=Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*t);
+  const b=Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*t);
+  return`rgb(${r},${g},${b})`;
+}
+
+function renderTopo(){
+  const band=$('topoBand').value;
+  const[lo,hi]=BANDS[band].range;
+  const powers={};
+  G.channels.forEach(ch=>{
+    if(TOPO_POS[ch]){const{freqs,psd}=getPSD(ch);powers[ch]=getBandPower(psd,freqs,lo,hi)}
+  });
+  const vals=Object.values(powers);
+  const mn=Math.min(...vals),mx=Math.max(...vals);
+  const W=500,H=520,R=220,cx=W/2,cy=H/2-10;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+
+  // Nose
+  svg+=`<path d="M${cx-14},${cy-R} Q${cx},${cy-R-28} ${cx+14},${cy-R}" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>`;
+  // Ears
+  svg+=`<ellipse cx="${cx-R-10}" cy="${cy}" rx="10" ry="16" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
+  svg+=`<ellipse cx="${cx+R+10}" cy="${cy}" rx="10" ry="16" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
+  // Head
+  svg+=`<ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${R}" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
+  // Cross lines
+  svg+=`<line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+  svg+=`<line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+
+  G.channels.forEach(ch=>{
+    if(!TOPO_POS[ch]||powers[ch]==null)return;
+    const p=TOPO_POS[ch];
+    const x=cx+(p.x-0.5)*R*2*0.92;
+    const y=cy+(p.y-0.5)*R*2*0.92;
+    const norm=(mx>mn)?(powers[ch]-mn)/(mx-mn):0.5;
+    const col=topoColor(norm);
+    svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="24" fill="${col}" opacity="0.88"/>`;
+    svg+=`<text x="${x.toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" class="topo-label">${ch}</text>`;
+    svg+=`<text x="${x.toFixed(1)}" y="${(y+9).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.75)" font-family="'Inter',system-ui,sans-serif">${(powers[ch]/1e6).toFixed(1)}</text>`;
+  });
+
+  // Legend
+  const gid='tg'+Date.now();
+  svg+=`<defs><linearGradient id="${gid}"><stop offset="0%" stop-color="rgb(83,74,183)"/><stop offset="25%" stop-color="rgb(55,138,221)"/><stop offset="50%" stop-color="rgb(60,80,60)"/><stop offset="75%" stop-color="rgb(216,90,48)"/><stop offset="100%" stop-color="rgb(220,50,50)"/></linearGradient></defs>`;
+  svg+=`<rect x="${cx-80}" y="${H-34}" width="160" height="8" rx="3" fill="url(#${gid})"/>`;
+  svg+=`<text x="${cx-80}" y="${H-14}" font-size="9" fill="rgba(255,255,255,0.4)" font-family="'Inter',system-ui,sans-serif">낮음</text>`;
+  svg+=`<text x="${cx+80}" y="${H-14}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)" font-family="'Inter',system-ui,sans-serif">높음</text>`;
+  svg+=`<text x="${cx}" y="${H-14}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="'Inter',system-ui,sans-serif">${BANDS[band].label} 파워 분포</text>`;
+  svg+=`</svg>`;
+  $('topoMap').innerHTML=svg;
+}
+</script>
+</body>
+</html>
