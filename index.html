@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0e0e10;--bg2:#18181c;--bg3:#222228;--bg4:#2a2a32;
+  --bg:#0e0e10;--bg2:#18181c;--bg3:#222228;
   --border:#333344;--border2:#44445a;
   --text:#e8e8f0;--text2:#9999bb;--text3:#6666aa;
   --blue:#378ADD;--teal:#1D9E75;--coral:#D85A30;
@@ -17,20 +17,24 @@
 }
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
 .app{display:grid;grid-template-columns:270px 1fr;grid-template-rows:52px 1fr;min-height:100vh}
+
+/* Header */
 header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--bg2);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:600;color:var(--text)}.logo span{color:var(--blue)}
+.logo-sub{font-size:11px;color:var(--text3);margin-left:4px}
 .hdr-credit{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
 .hdr-credit-main{font-size:11px;color:var(--text2);letter-spacing:.01em}
 .hdr-credit-ver{font-size:10px;color:var(--text3);margin-top:1px}
-.logo{font-size:15px;font-weight:600;color:var(--text)}.logo span{color:var(--blue)}
-.logo-sub{font-size:11px;color:var(--text3);margin-left:4px}
 header .sp{flex:1}
 .hdr-meta{font-size:11px;color:var(--text3)}
+
+/* Sidebar */
 sidebar{display:flex;flex-direction:column;background:var(--bg2);border-right:0.5px solid var(--border);padding:14px 0;overflow-y:auto}
 .sb{padding:0 14px;margin-bottom:18px}
 .sb-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
 main{padding:20px;overflow-y:auto;background:var(--bg)}
 
-/* Drop */
+/* Drop zone */
 .drop-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;cursor:pointer;color:var(--text3);transition:all .2s;background:var(--bg2)}
 .drop-zone:hover,.drop-zone.over{border-color:var(--blue);color:var(--text2);background:rgba(55,138,221,0.07)}
 .drop-icon{font-size:26px;margin-bottom:6px}
@@ -39,20 +43,34 @@ main{padding:20px;overflow-y:auto;background:var(--bg)}
 .status{font-size:11px;color:var(--text3);margin-top:6px;min-height:16px;padding:0 2px}
 .status.ok{color:var(--teal)}.status.err{color:var(--coral)}.status.info{color:var(--blue)}
 
-/* Preprocessing panel */
+/* Preprocessing panels */
 .pp-panel{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
 .pp-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .pp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--text2)}
 .pp-row:last-child{margin-bottom:0}
+.pp-sub{font-size:10px;color:var(--text3);margin-top:2px}
 .toggle{position:relative;display:inline-block;width:32px;height:18px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
 .slider-tog{position:absolute;inset:0;background:var(--border2);border-radius:9px;cursor:pointer;transition:.2s}
 .slider-tog:before{content:'';position:absolute;width:12px;height:12px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
 input:checked+.slider-tog{background:var(--blue)}
 input:checked+.slider-tog:before{transform:translateX(14px)}
-.pp-sub{font-size:10px;color:var(--text3);margin-top:2px}
 
-/* Run button */
+/* ? help button */
+.help-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:0.5px solid var(--border2);background:var(--bg);color:var(--text3);font-size:10px;cursor:pointer;flex-shrink:0;line-height:1;transition:all .15s;font-family:inherit}
+.help-btn:hover{border-color:var(--blue);color:var(--blue);background:rgba(55,138,221,0.1)}
+
+/* Tooltip popup */
+.tooltip-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.5)}
+.tooltip-overlay.show{display:flex;align-items:center;justify-content:center}
+.tooltip-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:20px 22px;max-width:340px;width:90%;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+.tooltip-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;line-height:1;padding:2px}
+.tooltip-close:hover{color:var(--text)}
+.tooltip-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px}
+.tooltip-body{font-size:12px;color:var(--text2);line-height:1.7}
+.tooltip-body b{color:var(--text);font-weight:500}
+
+/* Buttons */
 .run-btn{width:100%;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s;margin-top:6px}
 .run-btn:hover{opacity:.85}
 .run-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -75,7 +93,7 @@ input:checked+.slider-tog:before{transform:translateX(14px)}
 /* PP report */
 .pp-report{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px;display:none}
 .pp-report-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
-.pp-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pp-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .pp-step{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px}
 .pp-step-name{font-size:11px;font-weight:600;color:var(--teal);margin-bottom:3px}
 .pp-step-desc{font-size:10px;color:var(--text3);line-height:1.5}
@@ -84,7 +102,7 @@ input:checked+.slider-tog:before{transform:translateX(14px)}
 .badge-skip{background:rgba(102,102,170,0.15);color:var(--text3)}
 
 /* Tabs */
-.tab-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:18px}
+.tab-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:0}
 .tab{padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .15s;background:none}
 .tab:hover{color:var(--text2)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
@@ -96,7 +114,14 @@ input:checked+.slider-tog:before{transform:translateX(14px)}
 .badge-raw{background:rgba(216,90,48,0.15);color:var(--coral)}
 .badge-clean{background:rgba(29,158,117,0.15);color:var(--teal)}
 
-/* Ch select */
+/* In-card controls */
+.card-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border)}
+.card-ctrl-label{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase}
+.ch-grid-inline{display:flex;flex-wrap:wrap;gap:4px}
+.topo-band-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border)}
+.topo-band-label{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;white-space:nowrap}
+
+/* Ch select (sidebar) */
 .ch-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
 .ch-btn{padding:3px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s;font-family:inherit}
 .ch-btn:hover{border-color:var(--blue);color:var(--blue)}
@@ -143,15 +168,25 @@ select:hover{border-color:var(--blue)}
 </head>
 <body>
 <div class="app">
+
 <header>
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
   <div class="hdr-credit">
     <div class="hdr-credit-main">국민대학교 기술과디자인연구센터 김창수 제작</div>
-    <div class="hdr-credit-ver">v1.0.2</div>
+    <div class="hdr-credit-ver">v1.1.0</div>
   </div>
   <div class="sp"></div>
   <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
 </header>
+
+<!-- Tooltip overlay -->
+<div class="tooltip-overlay" id="tooltipOverlay">
+  <div class="tooltip-box">
+    <button class="tooltip-close" id="tooltipClose">✕</button>
+    <div class="tooltip-title" id="tooltipTitle"></div>
+    <div class="tooltip-body" id="tooltipBody"></div>
+  </div>
+</div>
 
 <sidebar>
   <div class="sb">
@@ -167,13 +202,21 @@ select:hover{border-color:var(--blue)}
 
   <div class="sb" id="ppSection" style="display:none">
     <div class="sb-label">전처리 설정</div>
+
     <div class="pp-panel">
-      <div class="pp-title">① Common Average Reference</div>
+      <div class="pp-title">
+        ① Common Average Reference
+        <button class="help-btn" data-help="car">?</button>
+      </div>
       <div class="pp-row"><span>CAR 적용</span><label class="toggle"><input type="checkbox" id="useCar" checked><span class="slider-tog"></span></label></div>
       <div class="pp-sub">DC offset 및 레퍼런스 전극 오염 교정</div>
     </div>
+
     <div class="pp-panel">
-      <div class="pp-title">② Bandpass filter</div>
+      <div class="pp-title">
+        ② Bandpass filter
+        <button class="help-btn" data-help="bp">?</button>
+      </div>
       <div class="pp-row"><span>적용</span><label class="toggle"><input type="checkbox" id="useBp" checked><span class="slider-tog"></span></label></div>
       <div class="sl-row" style="margin-top:6px">
         <label>저역 차단</label>
@@ -186,8 +229,12 @@ select:hover{border-color:var(--blue)}
         <span id="bpHiLbl">45 Hz</span>
       </div>
     </div>
+
     <div class="pp-panel">
-      <div class="pp-title">③ Notch filter</div>
+      <div class="pp-title">
+        ③ Notch filter
+        <button class="help-btn" data-help="notch">?</button>
+      </div>
       <div class="pp-row"><span>적용</span><label class="toggle"><input type="checkbox" id="useNotch" checked><span class="slider-tog"></span></label></div>
       <div class="sl-row" style="margin-top:6px">
         <label>주파수</label>
@@ -195,11 +242,25 @@ select:hover{border-color:var(--blue)}
         <span id="notchFreqLbl">50 Hz</span>
       </div>
     </div>
+
     <div class="pp-panel">
-      <div class="pp-title">④ ECG artifact removal</div>
-      <div class="pp-row"><span>회귀 제거</span><label class="toggle"><input type="checkbox" id="useEcg" checked><span class="slider-tog"></span></label></div>
-      <div class="pp-sub">BP1 채널을 참조 신호로 사용</div>
+      <div class="pp-title">
+        ④ ECG artifact removal
+        <button class="help-btn" data-help="ecg">?</button>
+      </div>
+      <div class="pp-row"><span>회귀 제거 (BP1)</span><label class="toggle"><input type="checkbox" id="useEcg" checked><span class="slider-tog"></span></label></div>
+      <div class="pp-sub">BP1 · 심전도 참조 신호</div>
     </div>
+
+    <div class="pp-panel">
+      <div class="pp-title">
+        ⑤ EOG artifact removal
+        <button class="help-btn" data-help="eog">?</button>
+      </div>
+      <div class="pp-row"><span>회귀 제거 (BP2)</span><label class="toggle"><input type="checkbox" id="useEog" checked><span class="slider-tog"></span></label></div>
+      <div class="pp-sub">BP2 · 안전도 참조 신호</div>
+    </div>
+
     <button class="run-btn" id="runBtn" disabled>전처리 실행</button>
     <div class="prog-wrap" id="progWrap">
       <div class="prog-bar-bg"><div class="prog-bar" id="progBar"></div></div>
@@ -209,9 +270,7 @@ select:hover{border-color:var(--blue)}
   </div>
 
   <div class="sb" id="ctrlSection" style="display:none">
-    <div class="sb-label">채널 선택</div>
-    <div class="ch-grid" id="chSelect"></div>
-    <div class="sb-label" style="margin-top:14px">분석 구간</div>
+    <div class="sb-label" style="margin-top:4px">분석 구간</div>
     <div class="sl-row"><label>시작</label><input type="range" id="segStart" min="0" max="120" value="0" step="1"><span id="segStartLbl">0s</span></div>
     <div class="sl-row"><label>끝</label><input type="range" id="segEnd" min="0" max="120" value="120" step="1"><span id="segEndLbl">120s</span></div>
     <div class="sb-label" style="margin-top:14px">주파수 범위</div>
@@ -222,17 +281,6 @@ select:hover{border-color:var(--blue)}
     <div class="sb-label">시계열 뷰</div>
     <div class="sl-row"><label>윈도우</label><input type="range" id="tsWindow" min="1" max="30" value="5" step="1"><span id="tsWindowLbl">5s</span></div>
     <div class="sl-row"><label>오프셋</label><input type="range" id="tsOffset" min="0" max="120" value="0" step="1"><span id="tsOffsetLbl">0s</span></div>
-  </div>
-
-  <div class="sb" id="topoCtrl" style="display:none">
-    <div class="sb-label">토포그래피 밴드</div>
-    <select id="topoBand">
-      <option value="delta">δ Delta (0.5–4 Hz)</option>
-      <option value="theta">θ Theta (4–8 Hz)</option>
-      <option value="alpha" selected>α Alpha (8–13 Hz)</option>
-      <option value="beta">β Beta (13–30 Hz)</option>
-      <option value="gamma">γ Gamma (30–45 Hz)</option>
-    </select>
   </div>
 </sidebar>
 
@@ -249,6 +297,7 @@ select:hover{border-color:var(--blue)}
       <div class="pp-report-title">전처리 보고서</div>
       <div class="pp-steps" id="ppSteps"></div>
     </div>
+
     <div class="tab-bar">
       <button class="tab active" data-tab="psd">Power Spectrum</button>
       <button class="tab" data-tab="band">Band Power</button>
@@ -256,25 +305,73 @@ select:hover{border-color:var(--blue)}
       <button class="tab" data-tab="topo">토포그래피</button>
       <button class="tab" data-tab="compare">전후 비교</button>
     </div>
+
+    <!-- PSD -->
     <div id="pane-psd">
-      <div class="card"><div class="card-title">Power Spectral Density <span class="card-badge" id="psdBadge"></span></div><div class="chart-wrap" style="height:290px"><canvas id="psdChart" role="img" aria-label="Power spectral density"></canvas></div></div>
+      <div class="card">
+        <div class="card-controls">
+          <span class="card-ctrl-label">채널 선택</span>
+          <div class="ch-grid-inline" id="chSelectPsd"></div>
+          <span class="card-badge" id="psdBadge"></span>
+        </div>
+        <div class="card-title" style="margin-bottom:8px">Power Spectral Density</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="psdChart" role="img" aria-label="Power spectral density"></canvas></div>
+      </div>
     </div>
+
+    <!-- Band Power -->
     <div id="pane-band" style="display:none">
-      <div class="band-row" id="bandGrid"></div>
-      <div class="card"><div class="card-title">밴드별 파워 비율 <span class="card-badge" id="bandBadge"></span></div><div class="chart-wrap" style="height:230px"><canvas id="bandChart" role="img" aria-label="Band power"></canvas></div></div>
+      <div class="card">
+        <div class="card-controls">
+          <span class="card-ctrl-label">채널 선택</span>
+          <div class="ch-grid-inline" id="chSelectBand"></div>
+          <span class="card-badge" id="bandBadge"></span>
+        </div>
+        <div class="band-row" id="bandGrid"></div>
+        <div class="card-title" style="margin-bottom:8px">밴드별 파워 비율</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="bandChart" role="img" aria-label="Band power"></canvas></div>
+      </div>
     </div>
+
+    <!-- Time series -->
     <div id="pane-ts" style="display:none">
-      <div class="card"><div class="card-title">시계열 파형 <span class="card-badge" id="tsBadge"></span></div><div class="chart-wrap" style="height:290px"><canvas id="tsChart" role="img" aria-label="Time series"></canvas></div></div>
+      <div class="card">
+        <div class="card-controls">
+          <span class="card-ctrl-label">채널 선택</span>
+          <div class="ch-grid-inline" id="chSelectTs"></div>
+          <span class="card-badge" id="tsBadge"></span>
+        </div>
+        <div class="card-title" style="margin-bottom:8px">시계열 파형</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="tsChart" role="img" aria-label="Time series"></canvas></div>
+      </div>
     </div>
+
+    <!-- Topo -->
     <div id="pane-topo" style="display:none">
-      <div class="card"><div class="card-title">두피 토포그래피 <span class="card-badge" id="topoBadge"></span></div><div class="topo-wrap" id="topoMap"></div></div>
+      <div class="card">
+        <div class="topo-band-row">
+          <span class="topo-band-label">밴드 선택</span>
+          <select id="topoBand">
+            <option value="delta">δ Delta (0.5–4 Hz)</option>
+            <option value="theta">θ Theta (4–8 Hz)</option>
+            <option value="alpha" selected>α Alpha (8–13 Hz)</option>
+            <option value="beta">β Beta (13–30 Hz)</option>
+            <option value="gamma">γ Gamma (30–45 Hz)</option>
+          </select>
+          <span class="card-badge" id="topoBadge"></span>
+        </div>
+        <div class="card-title" style="margin-bottom:8px">두피 토포그래피</div>
+        <div class="topo-wrap" id="topoMap"></div>
+      </div>
     </div>
+
+    <!-- Compare -->
     <div id="pane-compare" style="display:none">
       <div class="compare-grid">
-        <div class="card"><div class="card-title">원본 PSD <span class="card-badge badge-raw">RAW</span></div><div class="chart-wrap" style="height:230px"><canvas id="cmpRawChart" role="img" aria-label="Raw PSD"></canvas></div></div>
-        <div class="card"><div class="card-title">처리 후 PSD <span class="card-badge badge-clean">CLEAN</span></div><div class="chart-wrap" style="height:230px"><canvas id="cmpCleanChart" role="img" aria-label="Clean PSD"></canvas></div></div>
+        <div class="card"><div class="card-title">원본 PSD <span class="card-badge badge-raw">RAW</span></div><div class="chart-wrap" style="height:220px"><canvas id="cmpRawChart" role="img" aria-label="Raw PSD"></canvas></div></div>
+        <div class="card"><div class="card-title">처리 후 PSD <span class="card-badge badge-clean">CLEAN</span></div><div class="chart-wrap" style="height:220px"><canvas id="cmpCleanChart" role="img" aria-label="Clean PSD"></canvas></div></div>
       </div>
-      <div class="card" style="margin-top:0"><div class="card-title">채널별 std 변화 (µV)</div><div class="chart-wrap" style="height:220px"><canvas id="cmpStdChart" role="img" aria-label="Std comparison"></canvas></div></div>
+      <div class="card" style="margin-top:0"><div class="card-title">채널별 std 변화 (µV)</div><div class="chart-wrap" style="height:210px"><canvas id="cmpStdChart" role="img" aria-label="Std comparison"></canvas></div></div>
     </div>
   </div>
 </main>
@@ -292,9 +389,61 @@ const CH_COLORS=['#378ADD','#D85A30','#1D9E75','#D4537E','#BA7517','#7F77DD','#4
 const TOPO_POS={Fp1:{x:.38,y:.10},Fpz:{x:.5,y:.08},Fp2:{x:.62,y:.10},F7:{x:.18,y:.27},F3:{x:.35,y:.24},Fz:{x:.5,y:.22},F4:{x:.65,y:.24},F8:{x:.82,y:.27},T3:{x:.07,y:.50},C3:{x:.28,y:.47},Cz:{x:.5,y:.45},C4:{x:.72,y:.47},T4:{x:.93,y:.50},T5:{x:.18,y:.72},P3:{x:.35,y:.69},Pz:{x:.5,y:.67},P4:{x:.65,y:.69},T6:{x:.82,y:.72},O1:{x:.38,y:.88},Oz:{x:.5,y:.90},O2:{x:.62,y:.88}};
 const GC='rgba(255,255,255,0.06)',TC='rgba(255,255,255,0.4)';
 
-let G={sr:250,rawData:{},cleanData:null,channels:[],ecgData:null,selectedCh:[],duration:0,segStart:0,segEnd:0,isPP:false};
+// Help content
+const HELP={
+  car:{
+    title:'① Common Average Reference (CAR)',
+    body:`모든 채널의 평균 전위를 각 채널에서 빼는 재참조(re-referencing) 방법입니다.<br><br>
+<b>적용 이유:</b> 레퍼런스 전극(기준 전극)의 접촉 불량이나 오염 시, 해당 전위가 모든 채널에 공통으로 더해집니다. CAR은 이 공통 성분을 제거하여 DC offset 및 채널 간 편향을 교정합니다.<br><br>
+<b>주의:</b> 채널 수가 충분히 많을 때(≥16ch) 효과적입니다.`
+  },
+  bp:{
+    title:'② Bandpass Filter',
+    body:`관심 주파수 대역 외의 신호를 제거하는 필터입니다.<br><br>
+<b>저역 차단 (High-pass):</b> 설정값 미만의 초저주파를 제거합니다. 전극 이동, 땀, 호흡 등으로 인한 저주파 드리프트를 차단합니다. 일반적으로 0.5 Hz 권장.<br><br>
+<b>고역 차단 (Low-pass):</b> 설정값 초과의 고주파를 제거합니다. 근전도(EMG), 고주파 잡음을 제거합니다. EEG 분석 시 일반적으로 40–45 Hz 권장.<br><br>
+<b>알고리즘:</b> Butterworth 2차 양방향(zero-phase) 필터 적용.`
+  },
+  notch:{
+    title:'③ Notch Filter',
+    body:`특정 주파수만 선택적으로 제거하는 대역 제거 필터입니다.<br><br>
+<b>적용 이유:</b> 전원선(AC line)에서 유입되는 전자기 간섭(EMI)을 제거합니다. 한국·유럽은 <b>50 Hz</b>, 미국·일본은 <b>60 Hz</b>를 사용합니다.<br><br>
+<b>Q값:</b> 30으로 설정되어 있으며, 좁은 대역(±약 1.7 Hz)만 제거하여 인접 주파수 왜곡을 최소화합니다.`
+  },
+  ecg:{
+    title:'④ ECG Artifact Removal',
+    body:`심전도(ECG) 신호가 EEG에 혼입된 아티팩트를 제거합니다.<br><br>
+<b>참조 채널:</b> BP1 (CH16) — 심전도 신호. QRS 복합파 패턴이 확인되며 추정 심박수 약 75 bpm.<br><br>
+<b>방법:</b> BP1 신호를 정규화한 후, 각 EEG 채널과의 선형 회귀계수(β)를 산출하여 ECG 성분을 빼는 회귀 감산(regression subtraction) 방식을 사용합니다.<br><br>
+<b>효과:</b> 심장 박동과 동기화된 아티팩트(특히 중심부·두정부 채널)를 제거합니다.`
+  },
+  eog:{
+    title:'⑤ EOG Artifact Removal',
+    body:`안구운동(EOG) 신호가 EEG에 혼입된 아티팩트를 제거합니다.<br><br>
+<b>참조 채널:</b> BP2 (CH8) — 안전도(EOG) 신호. 주도 주파수 0.5 Hz 미만의 서파 패턴 확인.<br><br>
+<b>방법:</b> ECG 제거와 동일하게 BP2 신호를 참조 신호로 사용한 선형 회귀 감산을 적용합니다.<br><br>
+<b>효과:</b> 눈 깜박임, 안구 회전 등으로 인한 저주파 아티팩트를 제거합니다. 특히 전두부(Fp1, Fpz, Fp2) 채널에서 효과가 두드러집니다.`
+  }
+};
+
+let G={sr:250,rawData:{},cleanData:null,channels:[],ecgData:null,eogData:null,selectedCh:[],duration:0,segStart:0,segEnd:0,isPP:false};
 let charts={};
 const $=id=>document.getElementById(id);
+
+// ── Tooltip ──
+document.querySelectorAll('.help-btn').forEach(btn=>{
+  btn.onclick=e=>{
+    e.stopPropagation();
+    const key=btn.dataset.help;
+    const h=HELP[key];
+    if(!h)return;
+    $('tooltipTitle').textContent=h.title;
+    $('tooltipBody').innerHTML=h.body;
+    $('tooltipOverlay').classList.add('show');
+  };
+});
+$('tooltipClose').onclick=()=>$('tooltipOverlay').classList.remove('show');
+$('tooltipOverlay').onclick=e=>{if(e.target===$('tooltipOverlay'))$('tooltipOverlay').classList.remove('show')};
 
 // ── File loading ──
 $('dropZone').onclick=()=>$('fileInput').click();
@@ -318,23 +467,28 @@ function parseCSV(text,fname){
     const meta=(lines[1]||'').split('\t');
     const sr=parseInt(meta[1])||250;
     const headers=(lines[2]||'').split('\t');
-    const eegIdx=[],ecgIdx=[];
+    const eegIdx=[],ecgIdx=[],eogIdx=[];
     headers.forEach((h,i)=>{
-      if(h.includes('EEG'))eegIdx.push({name:h.split(':')[2]||h,idx:i,full:h});
+      if(h.includes('EEG'))eegIdx.push({name:h.split(':')[2]||h,idx:i});
       if(h.includes('ECG:BP1'))ecgIdx.push(i);
+      if(h.includes('ECG:BP2'))eogIdx.push(i);
     });
     if(!eegIdx.length)throw new Error('EEG 채널을 찾을 수 없습니다');
     const rawRows=lines.slice(3).filter(l=>l.trim());
     const data={};
     eegIdx.forEach(c=>data[c.name]=new Float64Array(rawRows.length));
     let ecg=ecgIdx.length?new Float64Array(rawRows.length):null;
+    let eog=eogIdx.length?new Float64Array(rawRows.length):null;
     rawRows.forEach((row,ri)=>{
       const cols=row.split('\t');
       eegIdx.forEach(c=>{data[c.name][ri]=parseFloat(cols[c.idx])||0});
-      if(ecg&&ecgIdx[0]!=null)ecg[ri]=parseFloat(cols[ecgIdx[0]])||0;
+      if(ecg)ecg[ri]=parseFloat(cols[ecgIdx[0]])||0;
+      if(eog)eog[ri]=parseFloat(cols[eogIdx[0]])||0;
     });
-    G={sr,rawData:data,cleanData:null,channels:eegIdx.map(c=>c.name),ecgData:ecg,
-       selectedCh:[eegIdx[0].name],duration:rawRows.length/sr,segStart:0,segEnd:rawRows.length/sr,isPP:false};
+    G={sr,rawData:data,cleanData:null,channels:eegIdx.map(c=>c.name),
+       ecgData:ecg,eogData:eog,
+       selectedCh:[eegIdx[0].name],duration:rawRows.length/sr,
+       segStart:0,segEnd:rawRows.length/sr,isPP:false};
     setSt(`✓ ${fname}  ·  ${G.channels.length}ch  ·  ${G.duration.toFixed(1)}s  ·  ${sr}Hz`,'ok');
     $('hdrMeta').textContent=`${fname}  ·  ${G.channels.length}ch  ·  ${G.duration.toFixed(1)}s`;
     initUI();
@@ -350,31 +504,42 @@ function initUI(){
   $('ctrlSection').style.display='';
   $('runBtn').disabled=false;
   renderMetrics();
-  renderChSelect();
+  renderAllChSelects();
   initSliders();
   renderAll();
 }
 
 function renderMetrics(){
-  const d=G.rawData[G.channels[0]];
   $('metricCards').innerHTML=`
     <div class="metric"><div class="metric-label">채널</div><div class="metric-value">${G.channels.length}<span class="metric-unit">ch</span></div></div>
     <div class="metric"><div class="metric-label">샘플링 레이트</div><div class="metric-value">${G.sr}<span class="metric-unit">Hz</span></div></div>
     <div class="metric"><div class="metric-label">측정 시간</div><div class="metric-value">${G.duration.toFixed(1)}<span class="metric-unit">s</span></div></div>
-    <div class="metric"><div class="metric-label">전처리</div><div class="metric-value" id="ppStatus" style="font-size:13px;padding-top:3px">${G.isPP?'<span style="color:var(--teal)">완료</span>':'<span style="color:var(--text3)">미적용</span>'}</div></div>`;
+    <div class="metric"><div class="metric-label">전처리</div><div class="metric-value" style="font-size:13px;padding-top:3px">${G.isPP?'<span style="color:var(--teal)">완료</span>':'<span style="color:var(--text3)">미적용</span>'}</div></div>`;
 }
 
-function renderChSelect(){
-  const el=$('chSelect');el.innerHTML='';
+// 채널 선택 버튼 — 카드 내부 3곳 + 공통 상태 공유
+function renderAllChSelects(){
+  ['Psd','Band','Ts'].forEach(id=>renderChSelectIn('chSelect'+id));
+}
+
+function renderChSelectIn(elId){
+  const el=$(elId); if(!el)return;
+  el.innerHTML='';
+  // multi 허용: PSD·TS, 단일: Band
+  const multi=(elId!=='chSelectBand');
   G.channels.forEach(ch=>{
     const isSel=G.selectedCh.includes(ch);
     const btn=document.createElement('button');
-    btn.className='ch-btn'+(isSel?(G.selectedCh.length>1?' active-m':' active'):'');
+    btn.className='ch-btn'+(isSel?(G.selectedCh.length>1&&multi?' active-m':' active'):'');
     btn.textContent=ch;
     btn.onclick=()=>{
-      if(G.selectedCh.includes(ch)){if(G.selectedCh.length>1)G.selectedCh=G.selectedCh.filter(c=>c!==ch)}
-      else G.selectedCh.push(ch);
-      renderChSelect();renderAll();
+      if(multi){
+        if(G.selectedCh.includes(ch)){if(G.selectedCh.length>1)G.selectedCh=G.selectedCh.filter(c=>c!==ch)}
+        else G.selectedCh.push(ch);
+      }else{
+        G.selectedCh=[ch];
+      }
+      renderAllChSelects();renderAll();
     };
     el.appendChild(btn);
   });
@@ -404,7 +569,6 @@ document.querySelectorAll('.tab').forEach(t=>{
     ['psd','band','ts','topo','compare'].forEach(p=>$('pane-'+p).style.display='none');
     $('pane-'+t.dataset.tab).style.display='';
     $('tsCtrl').style.display=t.dataset.tab==='ts'?'':'none';
-    $('topoCtrl').style.display=t.dataset.tab==='topo'?'':'none';
     renderAll();
   };
 });
@@ -416,29 +580,30 @@ async function runPreprocess(){
   $('runBtn').disabled=true;
   $('progWrap').style.display='';
   const steps=[
-    ['CAR 적용 중...',25,()=>$('useCar').checked],
-    ['밴드패스 필터 적용 중...',50,()=>$('useBp').checked],
-    ['노치 필터 적용 중...',75,()=>$('useNotch').checked],
-    ['ECG 아티팩트 제거 중...',100,()=>$('useEcg').checked],
+    ['CAR 적용 중...',20,()=>$('useCar').checked,'CAR'],
+    ['밴드패스 필터 적용 중...',40,()=>$('useBp').checked,'Bandpass'],
+    ['노치 필터 적용 중...',60,()=>$('useNotch').checked,'Notch'],
+    ['ECG 아티팩트 제거 중...',80,()=>$('useEcg').checked,'ECG'],
+    ['EOG 아티팩트 제거 중...',100,()=>$('useEog').checked,'EOG'],
   ];
   const applied=[];
   let data={};
   G.channels.forEach(ch=>{data[ch]=new Float64Array(G.rawData[ch])});
 
-  for(const[label,pct,check] of steps){
+  for(const[label,pct,check,key] of steps){
     setProgress(pct,label);
     await sleep(30);
     if(check()){
-      if(label.includes('CAR'))data=applyCAR(data);
-      else if(label.includes('밴드패스'))data=applyBP(data,parseFloat($('bpLo').value),parseInt($('bpHi').value));
-      else if(label.includes('노치'))data=applyNotch(data,parseInt($('notchFreq').value));
-      else if(label.includes('ECG')&&G.ecgData)data=applyECG(data,G.ecgData);
-      applied.push(label.replace(' 적용 중...','').replace(' 아티팩트 제거 중...',''));
+      if(key==='CAR')data=applyCAR(data);
+      else if(key==='Bandpass')data=applyBP(data,parseFloat($('bpLo').value),parseInt($('bpHi').value));
+      else if(key==='Notch')data=applyNotch(data,parseInt($('notchFreq').value));
+      else if(key==='ECG'&&G.ecgData)data=applyRef(data,G.ecgData);
+      else if(key==='EOG'&&G.eogData)data=applyRef(data,G.eogData);
+      applied.push(key);
     }
   }
 
-  G.cleanData=data;
-  G.isPP=true;
+  G.cleanData=data;G.isPP=true;
   setProgress(100,'완료');
   await sleep(200);
   $('progWrap').style.display='none';
@@ -451,70 +616,59 @@ async function runPreprocess(){
   setSt('전처리 완료 ✓','ok');
 }
 
-function setProgress(pct,label){
-  $('progBar').style.width=pct+'%';
-  $('progLabel').textContent=label;
-}
+function setProgress(pct,label){$('progBar').style.width=pct+'%';$('progLabel').textContent=label}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 function applyCAR(data){
-  const n=Object.values(data)[0].length;
-  const out={};
+  const n=Object.values(data)[0].length,out={};
   G.channels.forEach(ch=>out[ch]=new Float64Array(n));
   for(let i=0;i<n;i++){
-    let avg=0;
-    G.channels.forEach(ch=>avg+=data[ch][i]);
-    avg/=G.channels.length;
+    let avg=0;G.channels.forEach(ch=>avg+=data[ch][i]);avg/=G.channels.length;
     G.channels.forEach(ch=>out[ch][i]=data[ch][i]-avg);
   }
   return out;
 }
 
-function butterBP(fs,lo,hi,order=4){
-  const nyq=fs/2,wlo=lo/nyq,whi=hi/nyq;
-  return designButter(order,[wlo,whi],'bandpass');
-}
-function butterNotch(fs,freq,Q=30){
-  const w0=freq/(fs/2),bw=w0/Q;
-  return designButter(2,[w0-bw/2,w0+bw/2],'bandstop');
-}
-
-function designButter(order,freqs,type){
-  // Bilinear transform Butterworth — simplified for bandpass/bandstop
-  // Using cascaded biquad sections via matched-z approach
-  const sections=[];
-  if(type==='bandpass'){
-    const[wl,wh]=freqs,bw=wh-wl,wn=Math.sqrt(wl*wh);
-    for(let k=0;k<order/2;k++){
-      const theta=Math.PI*(2*k+1)/(2*(order/2));
-      const sk_r=-Math.sin(theta)*bw/2,sk_i=wn;
-      const pk=bilinear(sk_r,sk_i);
-      sections.push(biquadFromPole(pk[0],pk[1],'bp',wl,wh));
-    }
-  }else{
-    const[wl,wh]=freqs;
-    sections.push(biquadNotch(wl,wh));
-  }
-  return sections;
-}
-function bilinear(sr,si){return[sr,si]}
-function biquadFromPole(pr,pi,type,wl,wh){
-  const cos0=Math.cos(2*Math.PI*(wl+wh)/2),bw=2*Math.PI*(wh-wl);
-  const r=Math.exp(-bw/2),a1=-2*r*cos0,a2=r*r;
-  if(type==='bp')return{b:[1-r,0,-(1-r)],a:[1,a1,a2]};
-  return{b:[1,a1,a2],a:[1,a1,a2]};
-}
-function biquadNotch(wl,wh){
-  const wo=Math.PI*(wl+wh),bw=Math.PI*(wh-wl);
-  const cosw=Math.cos(wo),r=1-bw;
-  return{b:[1,-2*cosw,1],a:[1,-2*r*cosw,r*r]};
+function applyBP(data,lo,hi){
+  const nyq=G.sr/2,wo=Math.sqrt(lo*hi)/nyq,bw=(hi-lo)/nyq,Q=Math.sqrt(lo*hi)/(hi-lo);
+  const alpha=Math.sin(Math.PI*wo)/(2*Q);
+  const cosW=Math.cos(Math.PI*wo);
+  const b=[alpha,0,-alpha],a=[1+alpha,-2*cosW,1-alpha];
+  const out={};
+  G.channels.forEach(ch=>{out[ch]=filtfilt(data[ch],b,a)});
+  return out;
 }
 
-function filtfiltSimple(x,b,a){
+function applyNotch(data,freq){
+  const w0=2*Math.PI*freq/G.sr,cosW=Math.cos(w0),r=1-3*(1-cosW)/2;
+  const K=(1-2*r*cosW+r*r)/(2-2*cosW);
+  const b=[K,-2*K*cosW,K],a=[1,-2*r*cosW,r*r];
+  const out={};
+  G.channels.forEach(ch=>{out[ch]=filtfilt(data[ch],b,a)});
+  return out;
+}
+
+function applyRef(data,ref){
+  const n=ref.length;
+  let mean=0;for(let i=0;i<n;i++)mean+=ref[i];mean/=n;
+  let std=0;for(let i=0;i<n;i++)std+=(ref[i]-mean)**2;std=Math.sqrt(std/n)||1;
+  const refz=new Float64Array(n);
+  for(let i=0;i<n;i++)refz[i]=(ref[i]-mean)/std;
+  let denom=0;for(let i=0;i<n;i++)denom+=refz[i]**2;
+  const out={};
+  G.channels.forEach(ch=>{
+    const sig=data[ch];
+    let num=0;for(let i=0;i<n;i++)num+=sig[i]*refz[i];
+    const beta=num/(denom||1);
+    out[ch]=new Float64Array(n);
+    for(let i=0;i<n;i++)out[ch][i]=sig[i]-beta*refz[i];
+  });
+  return out;
+}
+
+function filtfilt(x,b,a){
   const n=x.length,nb=b.length,na=a.length;
-  const y=new Float64Array(n);
-  const xd=new Float64Array(Math.max(nb,na)),yd=new Float64Array(Math.max(nb,na));
-  // Forward pass
+  const y=new Float64Array(n),xd=new Float64Array(nb),yd=new Float64Array(na);
   for(let i=0;i<n;i++){
     let s=b[0]*x[i];
     for(let j=1;j<nb;j++)s+=b[j]*(xd[j-1]||0);
@@ -523,9 +677,7 @@ function filtfiltSimple(x,b,a){
     for(let j=xd.length-1;j>0;j--){xd[j]=xd[j-1];yd[j]=yd[j-1]}
     xd[0]=x[i];yd[0]=y[i]=s;
   }
-  // Backward pass
-  const y2=new Float64Array(n);
-  const xd2=new Float64Array(Math.max(nb,na)),yd2=new Float64Array(Math.max(nb,na));
+  const y2=new Float64Array(n),xd2=new Float64Array(nb),yd2=new Float64Array(na);
   for(let i=n-1;i>=0;i--){
     let s=b[0]*y[i];
     for(let j=1;j<nb;j++)s+=b[j]*(xd2[j-1]||0);
@@ -537,91 +689,34 @@ function filtfiltSimple(x,b,a){
   return y2;
 }
 
-function applyFilter(sig,b,a){return filtfiltSimple(sig,b,a)}
-
-function applyBP(data,lo,hi){
-  const out={};
-  const fs=G.sr,nyq=fs/2;
-  const wl=lo/nyq,wh=Math.min(hi/nyq,0.99);
-  // Simple 2nd-order Butterworth bandpass via biquad cascade
-  const cosWl=Math.cos(Math.PI*wl),cosWh=Math.cos(Math.PI*wh);
-  const sinWl=Math.sin(Math.PI*wl),sinWh=Math.sin(Math.PI*wh);
-  const bw=wh-wl,wo=Math.sqrt(wl*wh);
-  const cosWo=Math.cos(Math.PI*wo),Q=wo/bw;
-  const alpha=Math.sin(Math.PI*wo)/(2*Q);
-  const b=[alpha,0,-alpha],a=[1+alpha,-2*cosWo,1-alpha];
-  G.channels.forEach(ch=>{out[ch]=applyFilter(data[ch],b,a)});
-  return out;
-}
-
-function applyNotch(data,freq){
-  const fs=G.sr,w0=2*Math.PI*freq/fs,cosW=Math.cos(w0),sinW=Math.sin(w0);
-  const r=1-3*(1-cosW)/2;
-  const K=(1-2*r*cosW+r*r)/(2-2*cosW);
-  const b=[K,-2*K*cosW,K],a=[1,-2*r*cosW,r*r];
-  const out={};
-  G.channels.forEach(ch=>{out[ch]=applyFilter(data[ch],b,a)});
-  return out;
-}
-
-function applyECG(data,ecg){
-  const n=ecg.length;
-  let mean=0;for(let i=0;i<n;i++)mean+=ecg[i];mean/=n;
-  let std=0;for(let i=0;i<n;i++)std+=(ecg[i]-mean)**2;std=Math.sqrt(std/n)||1;
-  const ecgz=new Float64Array(n);
-  for(let i=0;i<n;i++)ecgz[i]=(ecg[i]-mean)/std;
-  let denom=0;for(let i=0;i<n;i++)denom+=ecgz[i]**2;
-  const out={};
-  G.channels.forEach(ch=>{
-    const sig=data[ch];
-    let num=0;for(let i=0;i<n;i++)num+=sig[i]*ecgz[i];
-    const beta=num/(denom||1);
-    out[ch]=new Float64Array(n);
-    for(let i=0;i<n;i++)out[ch][i]=sig[i]-beta*ecgz[i];
-  });
-  return out;
-}
-
-// ── Download cleaned CSV ──
+// ── Download ──
 $('dlBtn').onclick=()=>{
   if(!G.cleanData)return;
-  let lines=['0','BS24\t250\t26\t0'];
-  const cols=['CH0:FRAME:N',...G.channels.map(ch=>{
-    const raw=Object.keys(G.rawData);
-    return raw.find(k=>k.includes(ch))||'CH:EEG:'+ch;
-  })];
-  lines.push(cols.join('\t'));
+  const cols=['CH0:FRAME:N',...G.channels.map(ch=>'CH:EEG:'+ch)];
+  const lines=['0','BS24\t250\t26\t0',cols.join('\t')];
   const n=G.rawData[G.channels[0]].length;
-  for(let i=0;i<n;i++){
-    const row=[i,...G.channels.map(ch=>(G.cleanData[ch][i]*1000).toFixed(4))];
-    lines.push(row.join('\t'));
-  }
-  const blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  for(let i=0;i<n;i++)lines.push([i,...G.channels.map(ch=>(G.cleanData[ch][i]*1000).toFixed(4))].join('\t'));
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='eeg_cleaned.csv';
-  a.click();
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));
+  a.download='eeg_cleaned.csv';a.click();
 };
 
 function renderPPReport(applied){
-  const pp=$('ppReport');pp.style.display='';
-  const stepDefs=[
-    {key:'CAR',name:'Common Average Reference',desc:'채널 평균 제거 → DC offset 및 레퍼런스 오염 교정'},
-    {key:'밴드패스',name:`Bandpass ${$('bpLo').value}–${$('bpHi').value} Hz`,desc:'저주파 드리프트 및 고주파 근전도 노이즈 제거'},
-    {key:'노치',name:`Notch ${$('notchFreq').value} Hz`,desc:'전원선 노이즈 제거'},
-    {key:'ECG',name:'ECG Regression',desc:'심전도 잔류 아티팩트 선형 회귀 제거'},
+  $('ppReport').style.display='';
+  const defs=[
+    {key:'CAR',name:'CAR',desc:'DC offset 교정'},
+    {key:'Bandpass',name:`BP ${$('bpLo').value}–${$('bpHi').value}Hz`,desc:'저주파·고주파 제거'},
+    {key:'Notch',name:`Notch ${$('notchFreq').value}Hz`,desc:'전원선 노이즈'},
+    {key:'ECG',name:'ECG 제거',desc:'심전도 아티팩트'},
+    {key:'EOG',name:'EOG 제거',desc:'안전도 아티팩트'},
   ];
-  $('ppSteps').innerHTML=stepDefs.map(s=>{
-    const ok=applied.some(a=>s.key===a||a.includes(s.key)||s.key.includes(a.split(' ')[0]));
-    return`<div class="pp-step">
-      <div class="pp-step-name">${s.name}</div>
-      <div class="pp-step-desc">${s.desc}</div>
-      <span class="pp-badge ${ok?'badge-ok':'badge-skip'}">${ok?'적용됨':'건너뜀'}</span>
-    </div>`;
+  $('ppSteps').innerHTML=defs.map(s=>{
+    const ok=applied.includes(s.key);
+    return`<div class="pp-step"><div class="pp-step-name">${s.name}</div><div class="pp-step-desc">${s.desc}</div><span class="pp-badge ${ok?'badge-ok':'badge-skip'}">${ok?'적용됨':'건너뜀'}</span></div>`;
   }).join('');
 }
 
-// ── DSP helpers ──
+// ── DSP ──
 function fft(re){
   const n=Math.pow(2,Math.floor(Math.log2(re.length)));
   const x=re.slice(0,n),im=new Float64Array(n);
@@ -640,40 +735,32 @@ function fft(re){
 }
 
 function getActiveData(){return(G.isPP&&G.cleanData)?G.cleanData:G.rawData}
-
 function getSegData(ch,data){
-  const arr=data[ch];
-  const s=Math.floor(G.segStart*G.sr),e=Math.min(arr.length,Math.floor(G.segEnd*G.sr));
+  const arr=data[ch],s=Math.floor(G.segStart*G.sr),e=Math.min(arr.length,Math.floor(G.segEnd*G.sr));
   return arr.slice(s,e);
 }
-
 function getPSD(ch,data){
-  const seg=getSegData(ch,data);
-  const uv=new Float64Array(seg.length);
+  const seg=getSegData(ch,data),uv=new Float64Array(seg.length);
   for(let i=0;i<seg.length;i++)uv[i]=seg[i]/1000;
-  const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
-  const c=new Float64Array(uv.length);
+  const mean=uv.reduce((a,b)=>a+b,0)/uv.length,c=new Float64Array(uv.length);
   for(let i=0;i<uv.length;i++)c[i]=uv[i]-mean;
-  const psd=fft(c);
-  const freqs=[];
+  const psd=fft(c),freqs=[];
   for(let i=0;i<psd.length;i++)freqs.push(i*G.sr/psd.length/2);
   return{freqs,psd};
 }
-
 function getBP(psd,freqs,lo,hi){
   let s=0,n=0;
   for(let i=0;i<freqs.length;i++)if(freqs[i]>=lo&&freqs[i]<hi){s+=psd[i];n++}
   return n>0?s/n:0;
 }
-
 function dc(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
 
-// ── Render functions ──
+// ── Render ──
 function renderAll(){
   const at=document.querySelector('.tab.active')?.dataset.tab||'psd';
   const badge=G.isPP?'<span class="card-badge badge-clean">CLEAN</span>':'<span class="card-badge badge-raw">RAW</span>';
-  ['psdBadge','bandBadge','tsBadge','topoBadge'].forEach(id=>{if($(id))$(id).outerHTML=''});
-  if(at==='psd'){renderPSD();if($('psdBadge'))$('psdBadge').innerHTML=badge}
+  ['psdBadge','bandBadge','tsBadge','topoBadge'].forEach(id=>{const el=$(id);if(el)el.innerHTML=badge});
+  if(at==='psd')renderPSD();
   if(at==='band')renderBand();
   if(at==='ts')renderTS();
   if(at==='topo')renderTopo();
@@ -682,8 +769,7 @@ function renderAll(){
 
 function renderPSD(){
   dc('psd');
-  const maxF=parseInt($('freqMax').value)||50;
-  const d=getActiveData();
+  const maxF=parseInt($('freqMax').value)||50,d=getActiveData();
   const datasets=G.selectedCh.map((ch,i)=>{
     const{freqs,psd}=getPSD(ch,d);
     const labels=[],vals=[];
@@ -764,9 +850,7 @@ function renderTopo(){
 function renderCompare(){
   if(!G.cleanData){
     dc('cmpRawChart');dc('cmpCleanChart');dc('cmpStdChart');
-    $('cmpRawChart').parentElement.parentElement.querySelector('.card-title').innerHTML='원본 PSD <span class="card-badge badge-raw">RAW</span>';
-    $('cmpCleanChart').parentElement.parentElement.querySelector('.card-title').innerHTML='처리 후 PSD <span class="card-badge badge-clean">CLEAN</span> — 전처리 실행 후 표시됩니다';
-    renderCompareChart('cmpRawChart',G.rawData,'RAW',CH_COLORS[0]);
+    renderCompareChart('cmpRawChart',G.rawData,'RAW',CH_COLORS[1]);
     return;
   }
   renderCompareChart('cmpRawChart',G.rawData,'RAW',CH_COLORS[1]);
@@ -785,10 +869,9 @@ function renderCompareChart(id,data,label,color){
 
 function renderStdCompare(){
   dc('cmpStdChart');
-  const chs=G.channels.map(ch=>ch);
-  const rawStd=chs.map(ch=>{const d=G.rawData[ch];let m=0;for(let i=0;i<d.length;i++)m+=d[i];m/=d.length;let s=0;for(let i=0;i<d.length;i++)s+=(d[i]-m)**2;return parseFloat((Math.sqrt(s/d.length)/1000).toFixed(3))});
-  const clnStd=chs.map(ch=>{const d=G.cleanData[ch];let m=0;for(let i=0;i<d.length;i++)m+=d[i];m/=d.length;let s=0;for(let i=0;i<d.length;i++)s+=(d[i]-m)**2;return parseFloat((Math.sqrt(s/d.length)/1000).toFixed(3))});
-  charts['cmpStdChart']=new Chart($('cmpStdChart'),{type:'bar',data:{labels:chs,datasets:[{label:'원본 (µV)',data:rawStd,backgroundColor:'rgba(216,90,48,0.5)',borderColor:CH_COLORS[1],borderWidth:1,borderRadius:3},{label:'처리 후 (µV)',data:clnStd,backgroundColor:'rgba(55,138,221,0.5)',borderColor:CH_COLORS[0],borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:11},boxWidth:10,padding:10}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{title:{display:true,text:'std (µV)',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
+  const chs=G.channels;
+  const std=(src)=>chs.map(ch=>{const d=src[ch];let m=0;for(let i=0;i<d.length;i++)m+=d[i];m/=d.length;let s=0;for(let i=0;i<d.length;i++)s+=(d[i]-m)**2;return parseFloat((Math.sqrt(s/d.length)/1000).toFixed(3))});
+  charts['cmpStdChart']=new Chart($('cmpStdChart'),{type:'bar',data:{labels:chs,datasets:[{label:'원본 (µV)',data:std(G.rawData),backgroundColor:'rgba(216,90,48,0.5)',borderColor:CH_COLORS[1],borderWidth:1,borderRadius:3},{label:'처리 후 (µV)',data:std(G.cleanData),backgroundColor:'rgba(55,138,221,0.5)',borderColor:CH_COLORS[0],borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:11},boxWidth:10,padding:10}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{title:{display:true,text:'std (µV)',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 }
 </script>
 </body>
