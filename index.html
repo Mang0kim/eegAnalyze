@@ -160,6 +160,12 @@ select:hover{border-color:var(--blue)}
 
 .topo-wrap{display:flex;justify-content:center}
 .topo-wrap svg{max-width:440px;width:100%}
+.topo-time-ctrl{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;background:var(--bg3);border-radius:var(--radius);border:0.5px solid var(--border)}
+.topo-play-btn{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-family:inherit}
+.topo-play-btn:hover{border-color:var(--blue);color:var(--blue)}
+.topo-play-btn.playing{background:var(--blue);color:#fff;border-color:var(--blue)}
+.topo-time-lbl{font-size:11px;color:var(--text2);font-weight:500;white-space:nowrap;min-width:38px}
+.topo-epoch-lbl{font-size:10px;color:var(--text3);white-space:nowrap}
 
 /* Compare */
 .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -182,7 +188,7 @@ select:hover{border-color:var(--blue)}
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
   <div class="hdr-credit">
     <div class="hdr-credit-main">국민대학교 기술과디자인연구센터 김창수 제작</div>
-    <div class="hdr-credit-ver">v1.1.0</div>
+    <div class="hdr-credit-ver">v1.3.0</div>
   </div>
   <div class="sp"></div>
   <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
@@ -370,6 +376,20 @@ select:hover{border-color:var(--blue)}
           </select>
           <span class="card-badge" id="topoBadge"></span>
         </div>
+        <div class="topo-time-ctrl">
+          <button class="topo-play-btn" id="topoPlayBtn" title="재생/일시정지">&#9654;</button>
+          <div style="flex:1">
+            <input type="range" id="topoTimeSlider" min="0" max="100" value="0" step="1" style="width:100%">
+          </div>
+          <span class="topo-time-lbl" id="topoTimeLbl">0.0 s</span>
+          <span class="topo-time-lbl" style="color:var(--text3)">/ <span id="topoTotalLbl">—</span></span>
+          <span class="topo-epoch-lbl">epoch</span>
+          <select id="topoEpochSel" style="font-size:11px;padding:3px 6px">
+            <option value="1">1 s</option>
+            <option value="2" selected>2 s</option>
+            <option value="4">4 s</option>
+          </select>
+        </div>
         <div class="card-title" style="margin-bottom:8px">두피 토포그래피</div>
         <div class="topo-wrap" id="topoMap"></div>
       </div>
@@ -552,6 +572,7 @@ function initUI(){
   renderMetrics();
   renderAllChSelects();
   initSliders();
+  initTopoControls();
   renderAll();
 }
 
@@ -615,6 +636,7 @@ document.querySelectorAll('.tab').forEach(t=>{
     ['psd','band','ts','topo','arousal','compare'].forEach(p=>$('pane-'+p).style.display='none');
     $('pane-'+t.dataset.tab).style.display='';
     $('tsCtrl').style.display=t.dataset.tab==='ts'?'':'none';
+    if(t.dataset.tab!=='topo')stopTopoPlay();
     renderAll();
   };
 });
@@ -862,11 +884,25 @@ function topoColor(norm){
   return`rgb(${Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*t)},${Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*t)},${Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*t)})`;
 }
 
-function renderTopo(){
-  const band=$('topoBand').value,d=getActiveData();
-  const[lo,hi]=BANDS[band].range,powers={};
-  G.channels.forEach(ch=>{if(TOPO_POS[ch]){const{freqs,psd}=getPSD(ch,d);powers[ch]=getBP(psd,freqs,lo,hi)}});
-  const vals=Object.values(powers),mn=Math.min(...vals),mx=Math.max(...vals);
+// epoch 기반 PSD — 특정 구간 데이터만 사용
+function getPSDEpoch(ch, data, startSamp, epochSamp){
+  const arr=data[ch];
+  const s=Math.max(0,startSamp), e=Math.min(arr.length, s+epochSamp);
+  const seg=arr.slice(s,e);
+  const uv=new Float64Array(seg.length);
+  for(let i=0;i<seg.length;i++)uv[i]=seg[i]/1000;
+  const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
+  const c=new Float64Array(uv.length);
+  for(let i=0;i<uv.length;i++)c[i]=uv[i]-mean;
+  const psd=fft(c), freqs=[];
+  for(let i=0;i<psd.length;i++)freqs.push(i*G.sr/psd.length/2);
+  return{freqs,psd};
+}
+
+function drawTopoSVG(powers){
+  const vals=Object.values(powers).filter(v=>v!=null);
+  if(!vals.length)return'';
+  const mn=Math.min(...vals), mx=Math.max(...vals);
   const W=480,H=500,R=210,cx=W/2,cy=H/2-8;
   let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
   svg+=`<path d="M${cx-13},${cy-R} Q${cx},${cy-R-26} ${cx+13},${cy-R}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
@@ -877,7 +913,7 @@ function renderTopo(){
   svg+=`<line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
   G.channels.forEach(ch=>{
     if(!TOPO_POS[ch]||powers[ch]==null)return;
-    const p=TOPO_POS[ch],x=cx+(p.x-.5)*R*2*.91,y=cy+(p.y-.5)*R*2*.91;
+    const p=TOPO_POS[ch], x=cx+(p.x-.5)*R*2*.91, y=cy+(p.y-.5)*R*2*.91;
     const norm=(mx>mn)?(powers[ch]-mn)/(mx-mn):.5;
     const col=topoColor(norm);
     svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="22" fill="${col}" opacity=".87"/>`;
@@ -889,9 +925,84 @@ function renderTopo(){
   svg+=`<rect x="${cx-70}" y="${H-30}" width="140" height="8" rx="3" fill="url(#${gid})"/>`;
   svg+=`<text x="${cx-70}" y="${H-12}" font-size="9" fill="rgba(255,255,255,0.35)" font-family="'Inter',system-ui">낮음</text>`;
   svg+=`<text x="${cx+70}" y="${H-12}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.35)" font-family="'Inter',system-ui">높음</text>`;
-  svg+=`<text x="${cx}" y="${H-12}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.45)" font-family="'Inter',system-ui">${BANDS[band].label}</text>`;
+  svg+=`<text x="${cx}" y="${H-12}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.45)" font-family="'Inter',system-ui">${BANDS[$('topoBand').value].label}</text>`;
   svg+=`</svg>`;
-  $('topoMap').innerHTML=svg;
+  return svg;
+}
+
+let _topoTimer=null;
+
+function initTopoSlider(){
+  if(!G.channels.length)return;
+  const epochSec=parseInt($('topoEpochSel').value)||2;
+  const totalSamp=G.rawData[G.channels[0]].length;
+  const nEpochs=Math.floor(totalSamp/(G.sr*epochSec));
+  const sl=$('topoTimeSlider');
+  sl.max=Math.max(0,nEpochs-1);
+  sl.value=0;
+  $('topoTimeLbl').textContent='0.0 s';
+  $('topoTotalLbl').textContent=(totalSamp/G.sr).toFixed(1)+' s';
+}
+
+function renderTopoAtEpoch(epochIdx){
+  const epochSec=parseInt($('topoEpochSel').value)||2;
+  const epochSamp=epochSec*G.sr;
+  const startSamp=epochIdx*epochSamp;
+  const d=getActiveData();
+  const band=$('topoBand').value;
+  const[lo,hi]=BANDS[band].range;
+  const powers={};
+  G.channels.forEach(ch=>{
+    if(TOPO_POS[ch]){
+      const{freqs,psd}=getPSDEpoch(ch,d,startSamp,epochSamp);
+      powers[ch]=getBP(psd,freqs,lo,hi);
+    }
+  });
+  $('topoMap').innerHTML=drawTopoSVG(powers);
+  const t=(startSamp/G.sr).toFixed(1);
+  $('topoTimeLbl').textContent=t+' s';
+}
+
+function renderTopo(){
+  initTopoSlider();
+  renderTopoAtEpoch(parseInt($('topoTimeSlider').value)||0);
+}
+
+// 슬라이더·셀렉트·재생 이벤트는 initSliders에서 연결
+function initTopoControls(){
+  $('topoTimeSlider').oninput=()=>{
+    stopTopoPlay();
+    renderTopoAtEpoch(parseInt($('topoTimeSlider').value));
+  };
+  $('topoEpochSel').onchange=()=>{
+    stopTopoPlay();
+    initTopoSlider();
+    renderTopoAtEpoch(0);
+  };
+  $('topoBand').onchange=()=>renderTopoAtEpoch(parseInt($('topoTimeSlider').value)||0);
+  $('topoPlayBtn').onclick=toggleTopoPlay;
+}
+
+function toggleTopoPlay(){
+  if(_topoTimer){stopTopoPlay();return;}
+  $('topoPlayBtn').classList.add('playing');
+  $('topoPlayBtn').textContent='⏸';
+  const sl=$('topoTimeSlider');
+  const max=parseInt(sl.max)||0;
+  if(parseInt(sl.value)>=max) sl.value=0;
+  _topoTimer=setInterval(()=>{
+    let v=parseInt(sl.value)+1;
+    if(v>max){stopTopoPlay();return;}
+    sl.value=v;
+    renderTopoAtEpoch(v);
+  },600);
+}
+
+function stopTopoPlay(){
+  if(_topoTimer){clearInterval(_topoTimer);_topoTimer=null;}
+  const btn=$('topoPlayBtn');
+  btn.classList.remove('playing');
+  btn.innerHTML='&#9654;';
 }
 
 // ── Arousal / Relaxation ──
