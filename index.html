@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EEG Frequency Analyzer</title>
+<title>EEG Analyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -11,124 +11,144 @@
   --bg:#0e0e10;--bg2:#18181c;--bg3:#222228;--bg4:#2a2a32;
   --border:#333344;--border2:#44445a;
   --text:#e8e8f0;--text2:#9999bb;--text3:#6666aa;
-  --blue:#378ADD;--blue-dim:#1a3a5c;
-  --purple:#7F77DD;--purple-dim:#2a2850;
-  --teal:#1D9E75;--teal-dim:#0a3028;
-  --coral:#D85A30;--coral-dim:#3a1a0a;
-  --pink:#D4537E;--pink-dim:#38102a;
-  --amber:#BA7517;--amber-dim:#302010;
+  --blue:#378ADD;--teal:#1D9E75;--coral:#D85A30;
+  --purple:#7F77DD;--pink:#D4537E;--amber:#BA7517;
   --radius:8px;--radius-lg:12px;
 }
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
-a{color:var(--blue)}
-
-/* Layout */
-.app{display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;min-height:100vh}
-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 24px;background:var(--bg2);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100}
-.logo{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
-.logo span{color:var(--blue)}
+.app{display:grid;grid-template-columns:270px 1fr;grid-template-rows:52px 1fr;min-height:100vh}
+header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--bg2);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:600;color:var(--text)}.logo span{color:var(--blue)}
 .logo-sub{font-size:11px;color:var(--text3);margin-left:4px}
-header .spacer{flex:1}
-.header-meta{font-size:11px;color:var(--text3)}
+header .sp{flex:1}
+.hdr-meta{font-size:11px;color:var(--text3)}
+sidebar{display:flex;flex-direction:column;background:var(--bg2);border-right:0.5px solid var(--border);padding:14px 0;overflow-y:auto}
+.sb{padding:0 14px;margin-bottom:18px}
+.sb-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+main{padding:20px;overflow-y:auto;background:var(--bg)}
 
-sidebar{display:flex;flex-direction:column;gap:0;background:var(--bg2);border-right:0.5px solid var(--border);padding:16px 0;overflow-y:auto}
-.sidebar-section{padding:0 16px;margin-bottom:20px}
-.sidebar-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
-
-main{padding:24px;overflow-y:auto;background:var(--bg)}
-
-/* Drop zone */
-.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:28px 20px;text-align:center;cursor:pointer;color:var(--text3);transition:all .2s;background:var(--bg2)}
-.drop-zone:hover,.drop-zone.over{border-color:var(--blue);color:var(--text2);background:var(--blue-dim)}
-.drop-icon{font-size:28px;margin-bottom:8px}
-.drop-title{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:4px}
+/* Drop */
+.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;cursor:pointer;color:var(--text3);transition:all .2s;background:var(--bg2)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--blue);color:var(--text2);background:rgba(55,138,221,0.07)}
+.drop-icon{font-size:26px;margin-bottom:6px}
+.drop-title{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:3px}
 .drop-sub{font-size:11px}
+.status{font-size:11px;color:var(--text3);margin-top:6px;min-height:16px;padding:0 2px}
+.status.ok{color:var(--teal)}.status.err{color:var(--coral)}.status.info{color:var(--blue)}
 
-/* Status */
-.status{font-size:12px;color:var(--text3);margin-top:8px;min-height:16px;padding:0 2px}
-.status.ok{color:var(--teal)}
-.status.err{color:var(--coral)}
+/* Preprocessing panel */
+.pp-panel{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+.pp-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--text2)}
+.pp-row:last-child{margin-bottom:0}
+.toggle{position:relative;display:inline-block;width:32px;height:18px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider-tog{position:absolute;inset:0;background:var(--border2);border-radius:9px;cursor:pointer;transition:.2s}
+.slider-tog:before{content:'';position:absolute;width:12px;height:12px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.slider-tog{background:var(--blue)}
+input:checked+.slider-tog:before{transform:translateX(14px)}
+.pp-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* Run button */
+.run-btn{width:100%;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s;margin-top:6px}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.dl-btn{width:100%;padding:8px;background:transparent;color:var(--teal);border:0.5px solid var(--teal);border-radius:var(--radius);font-size:12px;cursor:pointer;font-family:inherit;margin-top:6px;transition:all .15s;display:none}
+.dl-btn:hover{background:rgba(29,158,117,0.1)}
+
+/* Progress */
+.prog-wrap{margin-top:8px;display:none}
+.prog-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-bar{height:100%;background:var(--blue);border-radius:2px;width:0;transition:width .3s}
+.prog-label{font-size:10px;color:var(--text3);margin-top:4px}
 
 /* Metrics */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.metric{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px}
-.metric-label{font-size:11px;color:var(--text3);margin-bottom:4px}
-.metric-value{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em}
-.metric-unit{font-size:11px;color:var(--text3);margin-left:3px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.metric{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:3px}
+.metric-value{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.metric-unit{font-size:10px;color:var(--text3);margin-left:2px}
 
-/* Tab bar */
-.tab-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:20px;gap:0}
-.tab{padding:9px 18px;font-size:13px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+/* PP report */
+.pp-report{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px;display:none}
+.pp-report-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
+.pp-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pp-step{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.pp-step-name{font-size:11px;font-weight:600;color:var(--teal);margin-bottom:3px}
+.pp-step-desc{font-size:10px;color:var(--text3);line-height:1.5}
+.pp-badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;margin-top:4px}
+.badge-ok{background:rgba(29,158,117,0.15);color:var(--teal)}
+.badge-skip{background:rgba(102,102,170,0.15);color:var(--text3)}
+
+/* Tabs */
+.tab-bar{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:18px}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .15s;background:none}
 .tab:hover{color:var(--text2)}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
 
-/* Cards */
-.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:16px}
-.card-title{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:14px}
+/* Card */
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:14px}
+.card-title{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500}
+.badge-raw{background:rgba(216,90,48,0.15);color:var(--coral)}
+.badge-clean{background:rgba(29,158,117,0.15);color:var(--teal)}
 
-/* Channel select */
-.ch-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
-.ch-btn{padding:3px 9px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s;font-family:inherit}
+/* Ch select */
+.ch-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.ch-btn{padding:3px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s;font-family:inherit}
 .ch-btn:hover{border-color:var(--blue);color:var(--blue)}
 .ch-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
-.ch-btn.active-multi{background:transparent;color:var(--blue);border-color:var(--blue)}
+.ch-btn.active-m{background:transparent;color:var(--blue);border-color:var(--blue)}
 
 /* Sliders */
-.slider-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3);margin-bottom:8px}
-.slider-row label{min-width:60px}
-.slider-row span{min-width:38px;text-align:right;color:var(--text2);font-weight:500}
+.sl-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-bottom:7px}
+.sl-row label{min-width:54px}
+.sl-row span{min-width:36px;text-align:right;color:var(--text2);font-weight:500;font-size:11px}
 input[type=range]{-webkit-appearance:none;width:100%;flex:1;height:3px;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue);border:2px solid var(--bg);cursor:pointer}
-select{background:var(--bg3);color:var(--text);border:0.5px solid var(--border2);border-radius:var(--radius);padding:5px 10px;font-family:inherit;font-size:12px;cursor:pointer;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--blue);border:2px solid var(--bg);cursor:pointer}
+select{background:var(--bg3);color:var(--text);border:0.5px solid var(--border2);border-radius:var(--radius);padding:5px 8px;font-family:inherit;font-size:12px;cursor:pointer;outline:none}
 select:hover{border-color:var(--blue)}
 
 /* Band cards */
-.band-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
-.band-card{border-radius:var(--radius);padding:12px;text-align:center;border:0.5px solid transparent}
-.band-name{font-size:12px;font-weight:600;margin-bottom:1px}
-.band-range{font-size:10px;opacity:.6;margin-bottom:6px}
-.band-pct{font-size:22px;font-weight:700;letter-spacing:-.02em}
-.band-bar{height:3px;border-radius:2px;margin-top:6px;transition:width .4s}
+.band-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.band-card{border-radius:var(--radius);padding:10px;text-align:center;border:0.5px solid transparent}
+.band-name{font-size:11px;font-weight:600;margin-bottom:1px}
+.band-range{font-size:9px;opacity:.6;margin-bottom:5px}
+.band-pct{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.band-bar{height:2px;border-radius:1px;margin-top:5px}
 
-/* Chart wrapper */
+/* Chart */
 .chart-wrap{position:relative;width:100%}
 
 /* Topo */
 .topo-wrap{display:flex;justify-content:center}
-.topo-wrap svg{max-width:460px;width:100%}
+.topo-wrap svg{max-width:440px;width:100%}
 
-/* Empty state */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;color:var(--text3);gap:8px;text-align:center}
-.empty-icon{font-size:36px;opacity:.4}
+/* Compare */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-/* Scrollbar */
+/* Empty */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;color:var(--text3);gap:8px;text-align:center}
+.empty-icon{font-size:32px;opacity:.3}
+
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-/* Responsive */
-@media(max-width:800px){
-  .app{grid-template-columns:1fr}
-  sidebar{display:none}
-  .metrics{grid-template-columns:repeat(2,1fr)}
-}
-
-/* SVG text */
+@media(max-width:800px){.app{grid-template-columns:1fr}sidebar{display:none}.metrics{grid-template-columns:repeat(2,1fr)}.pp-steps{grid-template-columns:1fr 1fr}.compare-grid{grid-template-columns:1fr}}
 .topo-label{fill:rgba(255,255,255,0.95);font-family:'Inter',system-ui,sans-serif}
 </style>
 </head>
 <body>
 <div class="app">
-
 <header>
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
-  <div class="spacer"></div>
-  <div class="header-meta" id="headerMeta">파일을 로드하세요</div>
+  <div class="sp"></div>
+  <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
 </header>
 
 <sidebar>
-  <div class="sidebar-section">
-    <div class="sidebar-label">데이터 로드</div>
+  <div class="sb">
+    <div class="sb-label">데이터 로드</div>
     <div class="drop-zone" id="dropZone">
       <div class="drop-icon">↑</div>
       <div class="drop-title">CSV 파일 업로드</div>
@@ -138,112 +158,116 @@ select:hover{border-color:var(--blue)}
     <div class="status" id="status"></div>
   </div>
 
-  <div class="sidebar-section" id="ctrlSection" style="display:none">
-    <div class="sidebar-label">채널 선택</div>
+  <div class="sb" id="ppSection" style="display:none">
+    <div class="sb-label">전처리 설정</div>
+    <div class="pp-panel">
+      <div class="pp-title">① Common Average Reference</div>
+      <div class="pp-row"><span>CAR 적용</span><label class="toggle"><input type="checkbox" id="useCar" checked><span class="slider-tog"></span></label></div>
+      <div class="pp-sub">DC offset 및 레퍼런스 전극 오염 교정</div>
+    </div>
+    <div class="pp-panel">
+      <div class="pp-title">② Bandpass filter</div>
+      <div class="pp-row"><span>적용</span><label class="toggle"><input type="checkbox" id="useBp" checked><span class="slider-tog"></span></label></div>
+      <div class="sl-row" style="margin-top:6px">
+        <label>저역 차단</label>
+        <input type="range" id="bpLo" min="0.1" max="2" value="0.5" step="0.1">
+        <span id="bpLoLbl">0.5 Hz</span>
+      </div>
+      <div class="sl-row">
+        <label>고역 차단</label>
+        <input type="range" id="bpHi" min="20" max="100" value="45" step="5">
+        <span id="bpHiLbl">45 Hz</span>
+      </div>
+    </div>
+    <div class="pp-panel">
+      <div class="pp-title">③ Notch filter</div>
+      <div class="pp-row"><span>적용</span><label class="toggle"><input type="checkbox" id="useNotch" checked><span class="slider-tog"></span></label></div>
+      <div class="sl-row" style="margin-top:6px">
+        <label>주파수</label>
+        <input type="range" id="notchFreq" min="50" max="60" value="50" step="10">
+        <span id="notchFreqLbl">50 Hz</span>
+      </div>
+    </div>
+    <div class="pp-panel">
+      <div class="pp-title">④ ECG artifact removal</div>
+      <div class="pp-row"><span>회귀 제거</span><label class="toggle"><input type="checkbox" id="useEcg" checked><span class="slider-tog"></span></label></div>
+      <div class="pp-sub">BP1 채널을 참조 신호로 사용</div>
+    </div>
+    <button class="run-btn" id="runBtn" disabled>전처리 실행</button>
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-bar-bg"><div class="prog-bar" id="progBar"></div></div>
+      <div class="prog-label" id="progLabel"></div>
+    </div>
+    <button class="dl-btn" id="dlBtn">처리 완료 데이터 다운로드</button>
+  </div>
+
+  <div class="sb" id="ctrlSection" style="display:none">
+    <div class="sb-label">채널 선택</div>
     <div class="ch-grid" id="chSelect"></div>
-
-    <div class="sidebar-label" style="margin-top:16px">분석 구간</div>
-    <div class="slider-row">
-      <label>시작</label>
-      <input type="range" id="segStart" min="0" max="120" value="0" step="1">
-      <span id="segStartLbl">0s</span>
-    </div>
-    <div class="slider-row">
-      <label>끝</label>
-      <input type="range" id="segEnd" min="0" max="120" value="120" step="1">
-      <span id="segEndLbl">120s</span>
-    </div>
-
-    <div class="sidebar-label" style="margin-top:16px">주파수 범위</div>
-    <div class="slider-row">
-      <label>최대</label>
-      <input type="range" id="freqMax" min="10" max="60" value="50" step="5">
-      <span id="freqMaxLbl">50 Hz</span>
-    </div>
+    <div class="sb-label" style="margin-top:14px">분석 구간</div>
+    <div class="sl-row"><label>시작</label><input type="range" id="segStart" min="0" max="120" value="0" step="1"><span id="segStartLbl">0s</span></div>
+    <div class="sl-row"><label>끝</label><input type="range" id="segEnd" min="0" max="120" value="120" step="1"><span id="segEndLbl">120s</span></div>
+    <div class="sb-label" style="margin-top:14px">주파수 범위</div>
+    <div class="sl-row"><label>최대</label><input type="range" id="freqMax" min="10" max="60" value="50" step="5"><span id="freqMaxLbl">50 Hz</span></div>
   </div>
 
-  <div class="sidebar-section" id="tsCtrl" style="display:none">
-    <div class="sidebar-label">시계열 뷰</div>
-    <div class="slider-row">
-      <label>윈도우</label>
-      <input type="range" id="tsWindow" min="1" max="30" value="5" step="1">
-      <span id="tsWindowLbl">5s</span>
-    </div>
-    <div class="slider-row">
-      <label>오프셋</label>
-      <input type="range" id="tsOffset" min="0" max="120" value="0" step="1">
-      <span id="tsOffsetLbl">0s</span>
-    </div>
+  <div class="sb" id="tsCtrl" style="display:none">
+    <div class="sb-label">시계열 뷰</div>
+    <div class="sl-row"><label>윈도우</label><input type="range" id="tsWindow" min="1" max="30" value="5" step="1"><span id="tsWindowLbl">5s</span></div>
+    <div class="sl-row"><label>오프셋</label><input type="range" id="tsOffset" min="0" max="120" value="0" step="1"><span id="tsOffsetLbl">0s</span></div>
   </div>
 
-  <div class="sidebar-section" id="topoCtrl" style="display:none">
-    <div class="sidebar-label">토포그래피</div>
+  <div class="sb" id="topoCtrl" style="display:none">
+    <div class="sb-label">토포그래피 밴드</div>
     <select id="topoBand">
-      <option value="delta">δ Delta  (0.5–4 Hz)</option>
-      <option value="theta">θ Theta  (4–8 Hz)</option>
-      <option value="alpha" selected>α Alpha  (8–13 Hz)</option>
-      <option value="beta">β Beta   (13–30 Hz)</option>
-      <option value="gamma">γ Gamma  (30–45 Hz)</option>
+      <option value="delta">δ Delta (0.5–4 Hz)</option>
+      <option value="theta">θ Theta (4–8 Hz)</option>
+      <option value="alpha" selected>α Alpha (8–13 Hz)</option>
+      <option value="beta">β Beta (13–30 Hz)</option>
+      <option value="gamma">γ Gamma (30–45 Hz)</option>
     </select>
   </div>
 </sidebar>
 
 <main>
-  <!-- empty state -->
   <div class="empty" id="emptyState">
     <div class="empty-icon">⟁</div>
     <div style="font-weight:500;color:var(--text2)">EEG 데이터를 로드하세요</div>
-    <div style="font-size:12px">BS24 포맷 CSV · 탭 구분자 · 250 Hz</div>
+    <div style="font-size:11px">BS24 포맷 CSV · 탭 구분자</div>
   </div>
 
-  <!-- content -->
   <div id="mainContent" style="display:none">
     <div class="metrics" id="metricCards"></div>
-
+    <div class="pp-report" id="ppReport">
+      <div class="pp-report-title">전처리 보고서</div>
+      <div class="pp-steps" id="ppSteps"></div>
+    </div>
     <div class="tab-bar">
       <button class="tab active" data-tab="psd">Power Spectrum</button>
       <button class="tab" data-tab="band">Band Power</button>
       <button class="tab" data-tab="ts">시계열</button>
       <button class="tab" data-tab="topo">토포그래피</button>
+      <button class="tab" data-tab="compare">전후 비교</button>
     </div>
-
-    <!-- PSD -->
     <div id="pane-psd">
-      <div class="card">
-        <div class="card-title">Power Spectral Density</div>
-        <div class="chart-wrap" style="height:300px">
-          <canvas id="psdChart" role="img" aria-label="Power spectral density chart"></canvas>
-        </div>
-      </div>
+      <div class="card"><div class="card-title">Power Spectral Density <span class="card-badge" id="psdBadge"></span></div><div class="chart-wrap" style="height:290px"><canvas id="psdChart" role="img" aria-label="Power spectral density"></canvas></div></div>
     </div>
-
-    <!-- Band -->
     <div id="pane-band" style="display:none">
       <div class="band-row" id="bandGrid"></div>
-      <div class="card">
-        <div class="card-title">밴드별 파워 비율</div>
-        <div class="chart-wrap" style="height:240px">
-          <canvas id="bandChart" role="img" aria-label="EEG band power bar chart"></canvas>
-        </div>
-      </div>
+      <div class="card"><div class="card-title">밴드별 파워 비율 <span class="card-badge" id="bandBadge"></span></div><div class="chart-wrap" style="height:230px"><canvas id="bandChart" role="img" aria-label="Band power"></canvas></div></div>
     </div>
-
-    <!-- TS -->
     <div id="pane-ts" style="display:none">
-      <div class="card">
-        <div class="card-title">시계열 파형</div>
-        <div class="chart-wrap" style="height:300px">
-          <canvas id="tsChart" role="img" aria-label="EEG time series waveform"></canvas>
-        </div>
-      </div>
+      <div class="card"><div class="card-title">시계열 파형 <span class="card-badge" id="tsBadge"></span></div><div class="chart-wrap" style="height:290px"><canvas id="tsChart" role="img" aria-label="Time series"></canvas></div></div>
     </div>
-
-    <!-- Topo -->
     <div id="pane-topo" style="display:none">
-      <div class="card">
-        <div class="card-title">두피 토포그래피</div>
-        <div class="topo-wrap" id="topoMap"></div>
+      <div class="card"><div class="card-title">두피 토포그래피 <span class="card-badge" id="topoBadge"></span></div><div class="topo-wrap" id="topoMap"></div></div>
+    </div>
+    <div id="pane-compare" style="display:none">
+      <div class="compare-grid">
+        <div class="card"><div class="card-title">원본 PSD <span class="card-badge badge-raw">RAW</span></div><div class="chart-wrap" style="height:230px"><canvas id="cmpRawChart" role="img" aria-label="Raw PSD"></canvas></div></div>
+        <div class="card"><div class="card-title">처리 후 PSD <span class="card-badge badge-clean">CLEAN</span></div><div class="chart-wrap" style="height:230px"><canvas id="cmpCleanChart" role="img" aria-label="Clean PSD"></canvas></div></div>
       </div>
+      <div class="card" style="margin-top:0"><div class="card-title">채널별 std 변화 (µV)</div><div class="chart-wrap" style="height:220px"><canvas id="cmpStdChart" role="img" aria-label="Std comparison"></canvas></div></div>
     </div>
   </div>
 </main>
@@ -251,27 +275,21 @@ select:hover{border-color:var(--blue)}
 
 <script>
 const BANDS={
-  delta:{label:'δ Delta',short:'δ',range:[0.5,4],color:'#7F77DD',bg:'rgba(127,119,221,0.12)',border:'rgba(127,119,221,0.3)'},
-  theta:{label:'θ Theta',short:'θ',range:[4,8],color:'#1D9E75',bg:'rgba(29,158,117,0.12)',border:'rgba(29,158,117,0.3)'},
-  alpha:{label:'α Alpha',short:'α',range:[8,13],color:'#378ADD',bg:'rgba(55,138,221,0.12)',border:'rgba(55,138,221,0.3)'},
-  beta:{label:'β Beta',short:'β',range:[13,30],color:'#D85A30',bg:'rgba(216,90,48,0.12)',border:'rgba(216,90,48,0.3)'},
-  gamma:{label:'γ Gamma',short:'γ',range:[30,45],color:'#D4537E',bg:'rgba(212,83,126,0.12)',border:'rgba(212,83,126,0.3)'}
+  delta:{label:'δ Delta',range:[0.5,4],color:'#7F77DD',bg:'rgba(127,119,221,0.12)',border:'rgba(127,119,221,0.3)'},
+  theta:{label:'θ Theta',range:[4,8],color:'#1D9E75',bg:'rgba(29,158,117,0.12)',border:'rgba(29,158,117,0.3)'},
+  alpha:{label:'α Alpha',range:[8,13],color:'#378ADD',bg:'rgba(55,138,221,0.12)',border:'rgba(55,138,221,0.3)'},
+  beta:{label:'β Beta',range:[13,30],color:'#D85A30',bg:'rgba(216,90,48,0.12)',border:'rgba(216,90,48,0.3)'},
+  gamma:{label:'γ Gamma',range:[30,45],color:'#D4537E',bg:'rgba(212,83,126,0.12)',border:'rgba(212,83,126,0.3)'}
 };
-const CH_COLORS=['#378ADD','#D85A30','#1D9E75','#D4537E','#BA7517','#7F77DD','#E24B4A','#639922','#4ECDC4','#FFB347'];
-const TOPO_POS={
-  Fp1:{x:0.38,y:0.10},Fpz:{x:0.5,y:0.08},Fp2:{x:0.62,y:0.10},
-  F7:{x:0.18,y:0.27},F3:{x:0.35,y:0.24},Fz:{x:0.5,y:0.22},F4:{x:0.65,y:0.24},F8:{x:0.82,y:0.27},
-  T3:{x:0.07,y:0.50},C3:{x:0.28,y:0.47},Cz:{x:0.5,y:0.45},C4:{x:0.72,y:0.47},T4:{x:0.93,y:0.50},
-  T5:{x:0.18,y:0.72},P3:{x:0.35,y:0.69},Pz:{x:0.5,y:0.67},P4:{x:0.65,y:0.69},T6:{x:0.82,y:0.72},
-  O1:{x:0.38,y:0.88},Oz:{x:0.5,y:0.90},O2:{x:0.62,y:0.88}
-};
+const CH_COLORS=['#378ADD','#D85A30','#1D9E75','#D4537E','#BA7517','#7F77DD','#4ECDC4','#FFB347','#E24B4A','#639922'];
+const TOPO_POS={Fp1:{x:.38,y:.10},Fpz:{x:.5,y:.08},Fp2:{x:.62,y:.10},F7:{x:.18,y:.27},F3:{x:.35,y:.24},Fz:{x:.5,y:.22},F4:{x:.65,y:.24},F8:{x:.82,y:.27},T3:{x:.07,y:.50},C3:{x:.28,y:.47},Cz:{x:.5,y:.45},C4:{x:.72,y:.47},T4:{x:.93,y:.50},T5:{x:.18,y:.72},P3:{x:.35,y:.69},Pz:{x:.5,y:.67},P4:{x:.65,y:.69},T6:{x:.82,y:.72},O1:{x:.38,y:.88},Oz:{x:.5,y:.90},O2:{x:.62,y:.88}};
+const GC='rgba(255,255,255,0.06)',TC='rgba(255,255,255,0.4)';
 
-let G={sr:250,data:{},channels:[],selectedCh:[],duration:0,segStart:0,segEnd:0};
+let G={sr:250,rawData:{},cleanData:null,channels:[],ecgData:null,selectedCh:[],duration:0,segStart:0,segEnd:0,isPP:false};
 let charts={};
-
 const $=id=>document.getElementById(id);
 
-// File loading
+// ── File loading ──
 $('dropZone').onclick=()=>$('fileInput').click();
 $('fileInput').onchange=e=>loadFile(e.target.files[0]);
 const dz=$('dropZone');
@@ -279,12 +297,12 @@ dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
 dz.ondragleave=()=>dz.classList.remove('over');
 dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');loadFile(e.dataTransfer.files[0])};
 
-function loadFile(file){
-  if(!file)return;
-  setStatus('읽는 중...','');
+function loadFile(f){
+  if(!f)return;
+  setSt('읽는 중...','info');
   const r=new FileReader();
-  r.onload=e=>parseCSV(e.target.result,file.name);
-  r.readAsText(file);
+  r.onload=e=>parseCSV(e.target.result,f.name);
+  r.readAsText(f);
 }
 
 function parseCSV(text,fname){
@@ -293,34 +311,37 @@ function parseCSV(text,fname){
     const meta=(lines[1]||'').split('\t');
     const sr=parseInt(meta[1])||250;
     const headers=(lines[2]||'').split('\t');
-    const eegCols=[];
-    headers.forEach((h,i)=>{if(h.includes('EEG'))eegCols.push({name:h.split(':')[2]||h,idx:i})});
-    if(!eegCols.length)throw new Error('EEG 채널을 찾을 수 없습니다');
+    const eegIdx=[],ecgIdx=[];
+    headers.forEach((h,i)=>{
+      if(h.includes('EEG'))eegIdx.push({name:h.split(':')[2]||h,idx:i,full:h});
+      if(h.includes('ECG:BP1'))ecgIdx.push(i);
+    });
+    if(!eegIdx.length)throw new Error('EEG 채널을 찾을 수 없습니다');
     const rawRows=lines.slice(3).filter(l=>l.trim());
     const data={};
-    eegCols.forEach(c=>data[c.name]=new Float64Array(rawRows.length));
+    eegIdx.forEach(c=>data[c.name]=new Float64Array(rawRows.length));
+    let ecg=ecgIdx.length?new Float64Array(rawRows.length):null;
     rawRows.forEach((row,ri)=>{
       const cols=row.split('\t');
-      eegCols.forEach(c=>{data[c.name][ri]=parseFloat(cols[c.idx])||0});
+      eegIdx.forEach(c=>{data[c.name][ri]=parseFloat(cols[c.idx])||0});
+      if(ecg&&ecgIdx[0]!=null)ecg[ri]=parseFloat(cols[ecgIdx[0]])||0;
     });
-    G={sr,data,channels:eegCols.map(c=>c.name),selectedCh:[eegCols[0].name],
-       duration:rawRows.length/sr,segStart:0,segEnd:rawRows.length/sr};
-    setStatus(`✓ ${fname}  |  ${G.channels.length}채널  ${G.duration.toFixed(1)}s  ${sr}Hz`,'ok');
-    $('headerMeta').textContent=`${fname}  ·  ${G.channels.length}ch  ·  ${G.duration.toFixed(1)}s`;
+    G={sr,rawData:data,cleanData:null,channels:eegIdx.map(c=>c.name),ecgData:ecg,
+       selectedCh:[eegIdx[0].name],duration:rawRows.length/sr,segStart:0,segEnd:rawRows.length/sr,isPP:false};
+    setSt(`✓ ${fname}  ·  ${G.channels.length}ch  ·  ${G.duration.toFixed(1)}s  ·  ${sr}Hz`,'ok');
+    $('hdrMeta').textContent=`${fname}  ·  ${G.channels.length}ch  ·  ${G.duration.toFixed(1)}s`;
     initUI();
-  }catch(err){setStatus('오류: '+err.message,'err')}
+  }catch(err){setSt('오류: '+err.message,'err')}
 }
 
-function setStatus(msg,cls){
-  const el=$('status');
-  el.textContent=msg;
-  el.className='status '+(cls||'');
-}
+function setSt(msg,cls){const e=$('status');e.textContent=msg;e.className='status '+(cls||'')}
 
 function initUI(){
   $('emptyState').style.display='none';
   $('mainContent').style.display='';
+  $('ppSection').style.display='';
   $('ctrlSection').style.display='';
+  $('runBtn').disabled=false;
   renderMetrics();
   renderChSelect();
   initSliders();
@@ -328,26 +349,24 @@ function initUI(){
 }
 
 function renderMetrics(){
-  const n=G.channels[0],d=G.data[n];
+  const d=G.rawData[G.channels[0]];
   $('metricCards').innerHTML=`
     <div class="metric"><div class="metric-label">채널</div><div class="metric-value">${G.channels.length}<span class="metric-unit">ch</span></div></div>
     <div class="metric"><div class="metric-label">샘플링 레이트</div><div class="metric-value">${G.sr}<span class="metric-unit">Hz</span></div></div>
     <div class="metric"><div class="metric-label">측정 시간</div><div class="metric-value">${G.duration.toFixed(1)}<span class="metric-unit">s</span></div></div>
-    <div class="metric"><div class="metric-label">총 샘플</div><div class="metric-value">${(d.length/1000).toFixed(0)}<span class="metric-unit">k</span></div></div>`;
+    <div class="metric"><div class="metric-label">전처리</div><div class="metric-value" id="ppStatus" style="font-size:13px;padding-top:3px">${G.isPP?'<span style="color:var(--teal)">완료</span>':'<span style="color:var(--text3)">미적용</span>'}</div></div>`;
 }
 
 function renderChSelect(){
-  const el=$('chSelect');
-  el.innerHTML='';
+  const el=$('chSelect');el.innerHTML='';
   G.channels.forEach(ch=>{
-    const btn=document.createElement('button');
     const isSel=G.selectedCh.includes(ch);
-    btn.className='ch-btn'+(isSel?(G.selectedCh.length>1?' active-multi':' active'):'');
+    const btn=document.createElement('button');
+    btn.className='ch-btn'+(isSel?(G.selectedCh.length>1?' active-m':' active'):'');
     btn.textContent=ch;
     btn.onclick=()=>{
-      if(G.selectedCh.includes(ch)){
-        if(G.selectedCh.length>1)G.selectedCh=G.selectedCh.filter(c=>c!==ch);
-      }else{G.selectedCh.push(ch)}
+      if(G.selectedCh.includes(ch)){if(G.selectedCh.length>1)G.selectedCh=G.selectedCh.filter(c=>c!==ch)}
+      else G.selectedCh.push(ch);
       renderChSelect();renderAll();
     };
     el.appendChild(btn);
@@ -356,24 +375,26 @@ function renderChSelect(){
 
 function initSliders(){
   const max=Math.floor(G.duration);
-  const ss=$('segStart'),se=$('segEnd');
-  ss.max=max;ss.value=0;se.max=max;se.value=max;
-  $('segStartLbl').textContent='0s';$('segEndLbl').textContent=max+'s';
-  $('tsOffset').max=max;
+  const ss=$('segStart'),se=$('segEnd'),to=$('tsOffset');
+  ss.max=max;ss.value=0;se.max=max;se.value=max;to.max=max;to.value=0;
+  $('segStartLbl').textContent='0s';$('segEndLbl').textContent=max+'s';$('tsOffsetLbl').textContent='0s';
   ss.oninput=()=>{G.segStart=Math.min(parseInt(ss.value),G.segEnd-1);$('segStartLbl').textContent=G.segStart+'s';renderAll()};
   se.oninput=()=>{G.segEnd=Math.max(parseInt(se.value),G.segStart+1);$('segEndLbl').textContent=G.segEnd+'s';renderAll()};
   $('freqMax').oninput=()=>{$('freqMaxLbl').textContent=$('freqMax').value+' Hz';renderPSD()};
   $('tsWindow').oninput=()=>{$('tsWindowLbl').textContent=$('tsWindow').value+'s';renderTS()};
-  $('tsOffset').oninput=()=>{$('tsOffsetLbl').textContent=$('tsOffset').value+'s';renderTS()};
+  to.oninput=()=>{$('tsOffsetLbl').textContent=to.value+'s';renderTS()};
+  $('bpLo').oninput=()=>$('bpLoLbl').textContent=parseFloat($('bpLo').value).toFixed(1)+' Hz';
+  $('bpHi').oninput=()=>$('bpHiLbl').textContent=$('bpHi').value+' Hz';
+  $('notchFreq').oninput=()=>$('notchFreqLbl').textContent=$('notchFreq').value+' Hz';
   $('topoBand').onchange=renderTopo;
 }
 
-// Tabs
+// ── Tabs ──
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick=()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
-    ['psd','band','ts','topo'].forEach(p=>$('pane-'+p).style.display='none');
+    ['psd','band','ts','topo','compare'].forEach(p=>$('pane-'+p).style.display='none');
     $('pane-'+t.dataset.tab).style.display='';
     $('tsCtrl').style.display=t.dataset.tab==='ts'?'':'none';
     $('topoCtrl').style.display=t.dataset.tab==='topo'?'':'none';
@@ -381,27 +402,229 @@ document.querySelectorAll('.tab').forEach(t=>{
   };
 });
 
-function renderAll(){
-  const at=document.querySelector('.tab.active')?.dataset.tab||'psd';
-  if(at==='psd')renderPSD();
-  if(at==='band')renderBand();
-  if(at==='ts')renderTS();
-  if(at==='topo')renderTopo();
+// ── Preprocessing ──
+$('runBtn').onclick=runPreprocess;
+
+async function runPreprocess(){
+  $('runBtn').disabled=true;
+  $('progWrap').style.display='';
+  const steps=[
+    ['CAR 적용 중...',25,()=>$('useCar').checked],
+    ['밴드패스 필터 적용 중...',50,()=>$('useBp').checked],
+    ['노치 필터 적용 중...',75,()=>$('useNotch').checked],
+    ['ECG 아티팩트 제거 중...',100,()=>$('useEcg').checked],
+  ];
+  const applied=[];
+  let data={};
+  G.channels.forEach(ch=>{data[ch]=new Float64Array(G.rawData[ch])});
+
+  for(const[label,pct,check] of steps){
+    setProgress(pct,label);
+    await sleep(30);
+    if(check()){
+      if(label.includes('CAR'))data=applyCAR(data);
+      else if(label.includes('밴드패스'))data=applyBP(data,parseFloat($('bpLo').value),parseInt($('bpHi').value));
+      else if(label.includes('노치'))data=applyNotch(data,parseInt($('notchFreq').value));
+      else if(label.includes('ECG')&&G.ecgData)data=applyECG(data,G.ecgData);
+      applied.push(label.replace(' 적용 중...','').replace(' 아티팩트 제거 중...',''));
+    }
+  }
+
+  G.cleanData=data;
+  G.isPP=true;
+  setProgress(100,'완료');
+  await sleep(200);
+  $('progWrap').style.display='none';
+  $('runBtn').disabled=false;
+  $('runBtn').textContent='전처리 재실행';
+  $('dlBtn').style.display='';
+  renderMetrics();
+  renderPPReport(applied);
+  renderAll();
+  setSt('전처리 완료 ✓','ok');
 }
 
-// FFT (Cooley-Tukey)
+function setProgress(pct,label){
+  $('progBar').style.width=pct+'%';
+  $('progLabel').textContent=label;
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function applyCAR(data){
+  const n=Object.values(data)[0].length;
+  const out={};
+  G.channels.forEach(ch=>out[ch]=new Float64Array(n));
+  for(let i=0;i<n;i++){
+    let avg=0;
+    G.channels.forEach(ch=>avg+=data[ch][i]);
+    avg/=G.channels.length;
+    G.channels.forEach(ch=>out[ch][i]=data[ch][i]-avg);
+  }
+  return out;
+}
+
+function butterBP(fs,lo,hi,order=4){
+  const nyq=fs/2,wlo=lo/nyq,whi=hi/nyq;
+  return designButter(order,[wlo,whi],'bandpass');
+}
+function butterNotch(fs,freq,Q=30){
+  const w0=freq/(fs/2),bw=w0/Q;
+  return designButter(2,[w0-bw/2,w0+bw/2],'bandstop');
+}
+
+function designButter(order,freqs,type){
+  // Bilinear transform Butterworth — simplified for bandpass/bandstop
+  // Using cascaded biquad sections via matched-z approach
+  const sections=[];
+  if(type==='bandpass'){
+    const[wl,wh]=freqs,bw=wh-wl,wn=Math.sqrt(wl*wh);
+    for(let k=0;k<order/2;k++){
+      const theta=Math.PI*(2*k+1)/(2*(order/2));
+      const sk_r=-Math.sin(theta)*bw/2,sk_i=wn;
+      const pk=bilinear(sk_r,sk_i);
+      sections.push(biquadFromPole(pk[0],pk[1],'bp',wl,wh));
+    }
+  }else{
+    const[wl,wh]=freqs;
+    sections.push(biquadNotch(wl,wh));
+  }
+  return sections;
+}
+function bilinear(sr,si){return[sr,si]}
+function biquadFromPole(pr,pi,type,wl,wh){
+  const cos0=Math.cos(2*Math.PI*(wl+wh)/2),bw=2*Math.PI*(wh-wl);
+  const r=Math.exp(-bw/2),a1=-2*r*cos0,a2=r*r;
+  if(type==='bp')return{b:[1-r,0,-(1-r)],a:[1,a1,a2]};
+  return{b:[1,a1,a2],a:[1,a1,a2]};
+}
+function biquadNotch(wl,wh){
+  const wo=Math.PI*(wl+wh),bw=Math.PI*(wh-wl);
+  const cosw=Math.cos(wo),r=1-bw;
+  return{b:[1,-2*cosw,1],a:[1,-2*r*cosw,r*r]};
+}
+
+function filtfiltSimple(x,b,a){
+  const n=x.length,nb=b.length,na=a.length;
+  const y=new Float64Array(n);
+  const xd=new Float64Array(Math.max(nb,na)),yd=new Float64Array(Math.max(nb,na));
+  // Forward pass
+  for(let i=0;i<n;i++){
+    let s=b[0]*x[i];
+    for(let j=1;j<nb;j++)s+=b[j]*(xd[j-1]||0);
+    for(let j=1;j<na;j++)s-=a[j]*(yd[j-1]||0);
+    s/=a[0];
+    for(let j=xd.length-1;j>0;j--){xd[j]=xd[j-1];yd[j]=yd[j-1]}
+    xd[0]=x[i];yd[0]=y[i]=s;
+  }
+  // Backward pass
+  const y2=new Float64Array(n);
+  const xd2=new Float64Array(Math.max(nb,na)),yd2=new Float64Array(Math.max(nb,na));
+  for(let i=n-1;i>=0;i--){
+    let s=b[0]*y[i];
+    for(let j=1;j<nb;j++)s+=b[j]*(xd2[j-1]||0);
+    for(let j=1;j<na;j++)s-=a[j]*(yd2[j-1]||0);
+    s/=a[0];
+    for(let j=xd2.length-1;j>0;j--){xd2[j]=xd2[j-1];yd2[j]=yd2[j-1]}
+    xd2[0]=y[i];yd2[0]=y2[i]=s;
+  }
+  return y2;
+}
+
+function applyFilter(sig,b,a){return filtfiltSimple(sig,b,a)}
+
+function applyBP(data,lo,hi){
+  const out={};
+  const fs=G.sr,nyq=fs/2;
+  const wl=lo/nyq,wh=Math.min(hi/nyq,0.99);
+  // Simple 2nd-order Butterworth bandpass via biquad cascade
+  const cosWl=Math.cos(Math.PI*wl),cosWh=Math.cos(Math.PI*wh);
+  const sinWl=Math.sin(Math.PI*wl),sinWh=Math.sin(Math.PI*wh);
+  const bw=wh-wl,wo=Math.sqrt(wl*wh);
+  const cosWo=Math.cos(Math.PI*wo),Q=wo/bw;
+  const alpha=Math.sin(Math.PI*wo)/(2*Q);
+  const b=[alpha,0,-alpha],a=[1+alpha,-2*cosWo,1-alpha];
+  G.channels.forEach(ch=>{out[ch]=applyFilter(data[ch],b,a)});
+  return out;
+}
+
+function applyNotch(data,freq){
+  const fs=G.sr,w0=2*Math.PI*freq/fs,cosW=Math.cos(w0),sinW=Math.sin(w0);
+  const r=1-3*(1-cosW)/2;
+  const K=(1-2*r*cosW+r*r)/(2-2*cosW);
+  const b=[K,-2*K*cosW,K],a=[1,-2*r*cosW,r*r];
+  const out={};
+  G.channels.forEach(ch=>{out[ch]=applyFilter(data[ch],b,a)});
+  return out;
+}
+
+function applyECG(data,ecg){
+  const n=ecg.length;
+  let mean=0;for(let i=0;i<n;i++)mean+=ecg[i];mean/=n;
+  let std=0;for(let i=0;i<n;i++)std+=(ecg[i]-mean)**2;std=Math.sqrt(std/n)||1;
+  const ecgz=new Float64Array(n);
+  for(let i=0;i<n;i++)ecgz[i]=(ecg[i]-mean)/std;
+  let denom=0;for(let i=0;i<n;i++)denom+=ecgz[i]**2;
+  const out={};
+  G.channels.forEach(ch=>{
+    const sig=data[ch];
+    let num=0;for(let i=0;i<n;i++)num+=sig[i]*ecgz[i];
+    const beta=num/(denom||1);
+    out[ch]=new Float64Array(n);
+    for(let i=0;i<n;i++)out[ch][i]=sig[i]-beta*ecgz[i];
+  });
+  return out;
+}
+
+// ── Download cleaned CSV ──
+$('dlBtn').onclick=()=>{
+  if(!G.cleanData)return;
+  let lines=['0','BS24\t250\t26\t0'];
+  const cols=['CH0:FRAME:N',...G.channels.map(ch=>{
+    const raw=Object.keys(G.rawData);
+    return raw.find(k=>k.includes(ch))||'CH:EEG:'+ch;
+  })];
+  lines.push(cols.join('\t'));
+  const n=G.rawData[G.channels[0]].length;
+  for(let i=0;i<n;i++){
+    const row=[i,...G.channels.map(ch=>(G.cleanData[ch][i]*1000).toFixed(4))];
+    lines.push(row.join('\t'));
+  }
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='eeg_cleaned.csv';
+  a.click();
+};
+
+function renderPPReport(applied){
+  const pp=$('ppReport');pp.style.display='';
+  const stepDefs=[
+    {key:'CAR',name:'Common Average Reference',desc:'채널 평균 제거 → DC offset 및 레퍼런스 오염 교정'},
+    {key:'밴드패스',name:`Bandpass ${$('bpLo').value}–${$('bpHi').value} Hz`,desc:'저주파 드리프트 및 고주파 근전도 노이즈 제거'},
+    {key:'노치',name:`Notch ${$('notchFreq').value} Hz`,desc:'전원선 노이즈 제거'},
+    {key:'ECG',name:'ECG Regression',desc:'심전도 잔류 아티팩트 선형 회귀 제거'},
+  ];
+  $('ppSteps').innerHTML=stepDefs.map(s=>{
+    const ok=applied.some(a=>s.key===a||a.includes(s.key)||s.key.includes(a.split(' ')[0]));
+    return`<div class="pp-step">
+      <div class="pp-step-name">${s.name}</div>
+      <div class="pp-step-desc">${s.desc}</div>
+      <span class="pp-badge ${ok?'badge-ok':'badge-skip'}">${ok?'적용됨':'건너뜀'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── DSP helpers ──
 function fft(re){
   const n=Math.pow(2,Math.floor(Math.log2(re.length)));
   const x=re.slice(0,n),im=new Float64Array(n);
   for(let len=2;len<=n;len<<=1){
     const ang=-2*Math.PI/len;
-    for(let i=0;i<n;i+=len){
-      for(let j=0;j<len/2;j++){
-        const a=i+j,b=i+j+len/2;
-        const tr=Math.cos(ang*j)*x[b]-Math.sin(ang*j)*im[b];
-        const ti=Math.sin(ang*j)*x[b]+Math.cos(ang*j)*im[b];
-        x[b]=x[a]-tr;im[b]=im[a]-ti;x[a]+=tr;im[a]+=ti;
-      }
+    for(let i=0;i<n;i+=len)for(let j=0;j<len/2;j++){
+      const a=i+j,b=i+j+len/2;
+      const tr=Math.cos(ang*j)*x[b]-Math.sin(ang*j)*im[b];
+      const ti=Math.sin(ang*j)*x[b]+Math.cos(ang*j)*im[b];
+      x[b]=x[a]-tr;im[b]=im[a]-ti;x[a]+=tr;im[a]+=ti;
     }
   }
   const psd=new Float64Array(n/2);
@@ -409,183 +632,156 @@ function fft(re){
   return psd;
 }
 
-function getSegData(ch){
-  const arr=G.data[ch];
-  const s=Math.floor(G.segStart*G.sr);
-  const e=Math.min(arr.length,Math.floor(G.segEnd*G.sr));
+function getActiveData(){return(G.isPP&&G.cleanData)?G.cleanData:G.rawData}
+
+function getSegData(ch,data){
+  const arr=data[ch];
+  const s=Math.floor(G.segStart*G.sr),e=Math.min(arr.length,Math.floor(G.segEnd*G.sr));
   return arr.slice(s,e);
 }
 
-function getPSD(ch){
-  const seg=getSegData(ch);
-  const mean=seg.reduce((a,b)=>a+b,0)/seg.length;
-  const c=new Float64Array(seg.length);
-  for(let i=0;i<seg.length;i++)c[i]=seg[i]-mean;
+function getPSD(ch,data){
+  const seg=getSegData(ch,data);
+  const uv=new Float64Array(seg.length);
+  for(let i=0;i<seg.length;i++)uv[i]=seg[i]/1000;
+  const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
+  const c=new Float64Array(uv.length);
+  for(let i=0;i<uv.length;i++)c[i]=uv[i]-mean;
   const psd=fft(c);
   const freqs=[];
   for(let i=0;i<psd.length;i++)freqs.push(i*G.sr/psd.length/2);
   return{freqs,psd};
 }
 
-function getBandPower(psd,freqs,lo,hi){
+function getBP(psd,freqs,lo,hi){
   let s=0,n=0;
-  for(let i=0;i<freqs.length;i++){if(freqs[i]>=lo&&freqs[i]<hi){s+=psd[i];n++}}
+  for(let i=0;i<freqs.length;i++)if(freqs[i]>=lo&&freqs[i]<hi){s+=psd[i];n++}
   return n>0?s/n:0;
 }
 
-function destroyChart(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
+function dc(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
 
-// Grid defaults
-const GRID_COLOR='rgba(255,255,255,0.06)';
-const TICK_COLOR='rgba(255,255,255,0.4)';
+// ── Render functions ──
+function renderAll(){
+  const at=document.querySelector('.tab.active')?.dataset.tab||'psd';
+  const badge=G.isPP?'<span class="card-badge badge-clean">CLEAN</span>':'<span class="card-badge badge-raw">RAW</span>';
+  ['psdBadge','bandBadge','tsBadge','topoBadge'].forEach(id=>{if($(id))$(id).outerHTML=''});
+  if(at==='psd'){renderPSD();if($('psdBadge'))$('psdBadge').innerHTML=badge}
+  if(at==='band')renderBand();
+  if(at==='ts')renderTS();
+  if(at==='topo')renderTopo();
+  if(at==='compare')renderCompare();
+}
 
 function renderPSD(){
-  destroyChart('psd');
+  dc('psd');
   const maxF=parseInt($('freqMax').value)||50;
-  const datasets=[];
-  G.selectedCh.forEach((ch,i)=>{
-    const{freqs,psd}=getPSD(ch);
+  const d=getActiveData();
+  const datasets=G.selectedCh.map((ch,i)=>{
+    const{freqs,psd}=getPSD(ch,d);
     const labels=[],vals=[];
     freqs.forEach((f,j)=>{if(f<=maxF){labels.push(f.toFixed(1));vals.push(parseFloat((Math.log10(psd[j]+1e-10)*10).toFixed(2)))}});
-    if(i===0)window._psdLabels=labels;
-    datasets.push({label:ch,data:vals,borderColor:CH_COLORS[i%CH_COLORS.length],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.2});
+    if(i===0)window._pL=labels;
+    return{label:ch,data:vals,borderColor:CH_COLORS[i%CH_COLORS.length],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.2};
   });
-  charts['psd']=new Chart($('psdChart'),{
-    type:'line',
-    data:{labels:window._psdLabels,datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{display:datasets.length>1,labels:{color:TICK_COLOR,font:{size:11},boxWidth:10,padding:12}}},
-      scales:{
-        x:{title:{display:true,text:'주파수 (Hz)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,maxTicksLimit:12,font:{size:10}},grid:{color:GRID_COLOR}},
-        y:{title:{display:true,text:'Power (dB)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,font:{size:10}},grid:{color:GRID_COLOR}}
-      }
-    }
-  });
+  charts['psd']=new Chart($('psdChart'),{type:'line',data:{labels:window._pL,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:datasets.length>1,labels:{color:TC,font:{size:11},boxWidth:10,padding:10}}},scales:{x:{title:{display:true,text:'주파수 (Hz)',color:TC,font:{size:11}},ticks:{color:TC,maxTicksLimit:12,font:{size:10}},grid:{color:GC}},y:{title:{display:true,text:'Power (dB)',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 }
 
 function renderBand(){
-  destroyChart('band');
-  const ch=G.selectedCh[0];
-  const{freqs,psd}=getPSD(ch);
+  dc('band');
+  const ch=G.selectedCh[0],d=getActiveData();
+  const{freqs,psd}=getPSD(ch,d);
   const bkeys=Object.keys(BANDS);
-  const powers=bkeys.map(b=>getBandPower(psd,freqs,BANDS[b].range[0],BANDS[b].range[1]));
+  const powers=bkeys.map(b=>getBP(psd,freqs,BANDS[b].range[0],BANDS[b].range[1]));
   const total=powers.reduce((a,b)=>a+b,0)||1;
-  const pcts=powers.map(p=>(p/total)*100);
-  const maxPct=Math.max(...pcts);
-
-  $('bandGrid').innerHTML=bkeys.map((b,i)=>`
-    <div class="band-card" style="background:${BANDS[b].bg};border-color:${BANDS[b].border}">
-      <div class="band-name" style="color:${BANDS[b].color}">${BANDS[b].label}</div>
-      <div class="band-range" style="color:${BANDS[b].color}">${BANDS[b].range[0]}–${BANDS[b].range[1]} Hz</div>
-      <div class="band-pct" style="color:${BANDS[b].color}">${pcts[i].toFixed(1)}<span style="font-size:13px">%</span></div>
-      <div class="band-bar" style="background:${BANDS[b].color};width:${(pcts[i]/maxPct*100).toFixed(0)}%"></div>
-    </div>`).join('');
-
-  charts['band']=new Chart($('bandChart'),{
-    type:'bar',
-    data:{
-      labels:bkeys.map(b=>BANDS[b].label),
-      datasets:[{label:'파워 비율 (%)',data:pcts.map(p=>parseFloat(p.toFixed(2))),
-        backgroundColor:bkeys.map(b=>BANDS[b].bg.replace('0.12','0.7')),
-        borderColor:bkeys.map(b=>BANDS[b].color),
-        borderWidth:1,borderRadius:4}]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        y:{title:{display:true,text:'%',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,font:{size:10}},grid:{color:GRID_COLOR}},
-        x:{ticks:{color:TICK_COLOR,font:{size:12}},grid:{display:false}}
-      }
-    }
-  });
+  const pcts=powers.map(p=>p/total*100),maxP=Math.max(...pcts);
+  $('bandGrid').innerHTML=bkeys.map((b,i)=>`<div class="band-card" style="background:${BANDS[b].bg};border-color:${BANDS[b].border}"><div class="band-name" style="color:${BANDS[b].color}">${BANDS[b].label}</div><div class="band-range" style="color:${BANDS[b].color}">${BANDS[b].range[0]}–${BANDS[b].range[1]} Hz</div><div class="band-pct" style="color:${BANDS[b].color}">${pcts[i].toFixed(1)}<span style="font-size:11px">%</span></div><div class="band-bar" style="background:${BANDS[b].color};width:${(pcts[i]/maxP*100).toFixed(0)}%"></div></div>`).join('');
+  charts['band']=new Chart($('bandChart'),{type:'bar',data:{labels:bkeys.map(b=>BANDS[b].label),datasets:[{label:'%',data:pcts.map(p=>parseFloat(p.toFixed(2))),backgroundColor:bkeys.map(b=>BANDS[b].bg.replace('0.12','0.7')),borderColor:bkeys.map(b=>BANDS[b].color),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'%',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}},x:{ticks:{color:TC,font:{size:12}},grid:{display:false}}}}});
 }
 
 function renderTS(){
-  destroyChart('ts');
-  const win=parseInt($('tsWindow').value)||5;
-  const off=parseInt($('tsOffset').value)||0;
-  const arr0=Object.values(G.data)[0]||[];
-  const s=Math.floor(off*G.sr);
-  const e=Math.min(arr0.length,s+win*G.sr);
+  dc('ts');
+  const win=parseInt($('tsWindow').value)||5,off=parseInt($('tsOffset').value)||0;
+  const d=getActiveData(),arr0=Object.values(d)[0]||[];
+  const s=Math.floor(off*G.sr),e=Math.min(arr0.length,s+win*G.sr);
   const step=Math.max(1,Math.floor((e-s)/1200));
-  const labels=[];
-  for(let i=s;i<e;i+=step)labels.push((i/G.sr).toFixed(2));
+  const labels=[];for(let i=s;i<e;i+=step)labels.push((i/G.sr).toFixed(2));
   const datasets=G.selectedCh.map((ch,i)=>{
-    const arr=G.data[ch];
-    const vals=[];
+    const arr=d[ch],vals=[];
     for(let j=s;j<e;j+=step)vals.push(parseFloat((arr[j]/1000).toFixed(3)));
     return{label:ch,data:vals,borderColor:CH_COLORS[i%CH_COLORS.length],backgroundColor:'transparent',borderWidth:1.2,pointRadius:0,tension:0};
   });
-  charts['ts']=new Chart($('tsChart'),{
-    type:'line',data:{labels,datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{display:datasets.length>1,labels:{color:TICK_COLOR,font:{size:11},boxWidth:10,padding:12}}},
-      scales:{
-        x:{title:{display:true,text:'시간 (s)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,maxTicksLimit:10,font:{size:10}},grid:{color:GRID_COLOR}},
-        y:{title:{display:true,text:'진폭 (µV)',color:TICK_COLOR,font:{size:11}},ticks:{color:TICK_COLOR,font:{size:10}},grid:{color:GRID_COLOR}}
-      }
-    }
-  });
+  charts['ts']=new Chart($('tsChart'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:datasets.length>1,labels:{color:TC,font:{size:11},boxWidth:10,padding:10}}},scales:{x:{title:{display:true,text:'시간 (s)',color:TC,font:{size:11}},ticks:{color:TC,maxTicksLimit:10,font:{size:10}},grid:{color:GC}},y:{title:{display:true,text:'진폭 (µV)',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 }
 
 function topoColor(norm){
   const stops=[[0,[83,74,183]],[0.25,[55,138,221]],[0.5,[60,80,60]],[0.75,[216,90,48]],[1,[220,50,50]]];
   let lo=stops[0],hi=stops[stops.length-1];
-  for(let i=0;i<stops.length-1;i++){if(norm>=stops[i][0]&&norm<=stops[i+1][0]){lo=stops[i];hi=stops[i+1];break}}
+  for(let i=0;i<stops.length-1;i++)if(norm>=stops[i][0]&&norm<=stops[i+1][0]){lo=stops[i];hi=stops[i+1];break}
   const t=(norm-lo[0])/(hi[0]-lo[0]||1);
-  const r=Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*t);
-  const g=Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*t);
-  const b=Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*t);
-  return`rgb(${r},${g},${b})`;
+  return`rgb(${Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*t)},${Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*t)},${Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*t)})`;
 }
 
 function renderTopo(){
-  const band=$('topoBand').value;
-  const[lo,hi]=BANDS[band].range;
-  const powers={};
-  G.channels.forEach(ch=>{
-    if(TOPO_POS[ch]){const{freqs,psd}=getPSD(ch);powers[ch]=getBandPower(psd,freqs,lo,hi)}
-  });
-  const vals=Object.values(powers);
-  const mn=Math.min(...vals),mx=Math.max(...vals);
-  const W=500,H=520,R=220,cx=W/2,cy=H/2-10;
+  const band=$('topoBand').value,d=getActiveData();
+  const[lo,hi]=BANDS[band].range,powers={};
+  G.channels.forEach(ch=>{if(TOPO_POS[ch]){const{freqs,psd}=getPSD(ch,d);powers[ch]=getBP(psd,freqs,lo,hi)}});
+  const vals=Object.values(powers),mn=Math.min(...vals),mx=Math.max(...vals);
+  const W=480,H=500,R=210,cx=W/2,cy=H/2-8;
   let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
-
-  // Nose
-  svg+=`<path d="M${cx-14},${cy-R} Q${cx},${cy-R-28} ${cx+14},${cy-R}" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>`;
-  // Ears
-  svg+=`<ellipse cx="${cx-R-10}" cy="${cy}" rx="10" ry="16" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
-  svg+=`<ellipse cx="${cx+R+10}" cy="${cy}" rx="10" ry="16" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
-  // Head
-  svg+=`<ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${R}" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
-  // Cross lines
-  svg+=`<line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
-  svg+=`<line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
-
+  svg+=`<path d="M${cx-13},${cy-R} Q${cx},${cy-R-26} ${cx+13},${cy-R}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
+  svg+=`<ellipse cx="${cx-R-9}" cy="${cy}" rx="9" ry="15" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>`;
+  svg+=`<ellipse cx="${cx+R+9}" cy="${cy}" rx="9" ry="15" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>`;
+  svg+=`<ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${R}" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>`;
+  svg+=`<line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+  svg+=`<line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
   G.channels.forEach(ch=>{
     if(!TOPO_POS[ch]||powers[ch]==null)return;
-    const p=TOPO_POS[ch];
-    const x=cx+(p.x-0.5)*R*2*0.92;
-    const y=cy+(p.y-0.5)*R*2*0.92;
-    const norm=(mx>mn)?(powers[ch]-mn)/(mx-mn):0.5;
+    const p=TOPO_POS[ch],x=cx+(p.x-.5)*R*2*.91,y=cy+(p.y-.5)*R*2*.91;
+    const norm=(mx>mn)?(powers[ch]-mn)/(mx-mn):.5;
     const col=topoColor(norm);
-    svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="24" fill="${col}" opacity="0.88"/>`;
+    svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="22" fill="${col}" opacity=".87"/>`;
     svg+=`<text x="${x.toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" class="topo-label">${ch}</text>`;
-    svg+=`<text x="${x.toFixed(1)}" y="${(y+9).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.75)" font-family="'Inter',system-ui,sans-serif">${(powers[ch]/1e6).toFixed(1)}</text>`;
+    svg+=`<text x="${x.toFixed(1)}" y="${(y+8).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.75)" font-family="'Inter',system-ui">${(powers[ch]/1e6).toFixed(1)}</text>`;
   });
-
-  // Legend
-  const gid='tg'+Date.now();
+  const gid='g'+Date.now();
   svg+=`<defs><linearGradient id="${gid}"><stop offset="0%" stop-color="rgb(83,74,183)"/><stop offset="25%" stop-color="rgb(55,138,221)"/><stop offset="50%" stop-color="rgb(60,80,60)"/><stop offset="75%" stop-color="rgb(216,90,48)"/><stop offset="100%" stop-color="rgb(220,50,50)"/></linearGradient></defs>`;
-  svg+=`<rect x="${cx-80}" y="${H-34}" width="160" height="8" rx="3" fill="url(#${gid})"/>`;
-  svg+=`<text x="${cx-80}" y="${H-14}" font-size="9" fill="rgba(255,255,255,0.4)" font-family="'Inter',system-ui,sans-serif">낮음</text>`;
-  svg+=`<text x="${cx+80}" y="${H-14}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)" font-family="'Inter',system-ui,sans-serif">높음</text>`;
-  svg+=`<text x="${cx}" y="${H-14}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="'Inter',system-ui,sans-serif">${BANDS[band].label} 파워 분포</text>`;
+  svg+=`<rect x="${cx-70}" y="${H-30}" width="140" height="8" rx="3" fill="url(#${gid})"/>`;
+  svg+=`<text x="${cx-70}" y="${H-12}" font-size="9" fill="rgba(255,255,255,0.35)" font-family="'Inter',system-ui">낮음</text>`;
+  svg+=`<text x="${cx+70}" y="${H-12}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.35)" font-family="'Inter',system-ui">높음</text>`;
+  svg+=`<text x="${cx}" y="${H-12}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.45)" font-family="'Inter',system-ui">${BANDS[band].label}</text>`;
   svg+=`</svg>`;
   $('topoMap').innerHTML=svg;
+}
+
+function renderCompare(){
+  if(!G.cleanData){
+    dc('cmpRawChart');dc('cmpCleanChart');dc('cmpStdChart');
+    $('cmpRawChart').parentElement.parentElement.querySelector('.card-title').innerHTML='원본 PSD <span class="card-badge badge-raw">RAW</span>';
+    $('cmpCleanChart').parentElement.parentElement.querySelector('.card-title').innerHTML='처리 후 PSD <span class="card-badge badge-clean">CLEAN</span> — 전처리 실행 후 표시됩니다';
+    renderCompareChart('cmpRawChart',G.rawData,'RAW',CH_COLORS[0]);
+    return;
+  }
+  renderCompareChart('cmpRawChart',G.rawData,'RAW',CH_COLORS[1]);
+  renderCompareChart('cmpCleanChart',G.cleanData,'CLEAN',CH_COLORS[0]);
+  renderStdCompare();
+}
+
+function renderCompareChart(id,data,label,color){
+  dc(id);
+  const maxF=50,ch=G.selectedCh[0];
+  const{freqs,psd}=getPSD(ch,data);
+  const labels=[],vals=[];
+  freqs.forEach((f,j)=>{if(f<=maxF){labels.push(f.toFixed(1));vals.push(parseFloat((Math.log10(psd[j]+1e-10)*10).toFixed(2)))}});
+  charts[id]=new Chart($(id),{type:'line',data:{labels,datasets:[{label,data:vals,borderColor:color,backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Hz',color:TC,font:{size:10}},ticks:{color:TC,maxTicksLimit:8,font:{size:9}},grid:{color:GC}},y:{title:{display:true,text:'dB',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+}
+
+function renderStdCompare(){
+  dc('cmpStdChart');
+  const chs=G.channels.map(ch=>ch);
+  const rawStd=chs.map(ch=>{const d=G.rawData[ch];let m=0;for(let i=0;i<d.length;i++)m+=d[i];m/=d.length;let s=0;for(let i=0;i<d.length;i++)s+=(d[i]-m)**2;return parseFloat((Math.sqrt(s/d.length)/1000).toFixed(3))});
+  const clnStd=chs.map(ch=>{const d=G.cleanData[ch];let m=0;for(let i=0;i<d.length;i++)m+=d[i];m/=d.length;let s=0;for(let i=0;i<d.length;i++)s+=(d[i]-m)**2;return parseFloat((Math.sqrt(s/d.length)/1000).toFixed(3))});
+  charts['cmpStdChart']=new Chart($('cmpStdChart'),{type:'bar',data:{labels:chs,datasets:[{label:'원본 (µV)',data:rawStd,backgroundColor:'rgba(216,90,48,0.5)',borderColor:CH_COLORS[1],borderWidth:1,borderRadius:3},{label:'처리 후 (µV)',data:clnStd,backgroundColor:'rgba(55,138,221,0.5)',borderColor:CH_COLORS[0],borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:11},boxWidth:10,padding:10}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{title:{display:true,text:'std (µV)',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 }
 </script>
 </body>
