@@ -158,8 +158,11 @@ select:hover{border-color:var(--blue)}
 .state-arousal{background:rgba(216,90,48,0.15);color:#D85A30}
 .state-neutral{background:rgba(102,102,170,0.15);color:var(--text2)}
 
-.topo-wrap{display:flex;justify-content:center}
-.topo-wrap svg{max-width:440px;width:100%}
+.topo-canvas-wrap{display:flex;justify-content:center}
+.topo-canvas-wrap canvas{max-width:480px;width:100%;height:auto}
+.topo-mode-toggle{display:flex;border:0.5px solid var(--border2);border-radius:var(--radius);overflow:hidden;flex-shrink:0}
+.topo-mode-btn{padding:4px 10px;font-size:11px;border:none;background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all .15s}
+.topo-mode-btn.active{background:var(--blue);color:#fff}
 .topo-time-ctrl{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;background:var(--bg3);border-radius:var(--radius);border:0.5px solid var(--border)}
 .topo-play-btn{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-family:inherit}
 .topo-play-btn:hover{border-color:var(--blue);color:var(--blue)}
@@ -188,7 +191,7 @@ select:hover{border-color:var(--blue)}
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
   <div class="hdr-credit">
     <div class="hdr-credit-main">국민대학교 기술과디자인연구센터 김창수 제작</div>
-    <div class="hdr-credit-ver">v1.3.0</div>
+    <div class="hdr-credit-ver">v1.4.0</div>
   </div>
   <div class="sp"></div>
   <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
@@ -374,9 +377,13 @@ select:hover{border-color:var(--blue)}
             <option value="beta">β Beta (13–30 Hz)</option>
             <option value="gamma">γ Gamma (30–45 Hz)</option>
           </select>
+          <div class="topo-mode-toggle">
+            <button class="topo-mode-btn active" id="topoModeAll">전체</button>
+            <button class="topo-mode-btn" id="topoModeEpoch">시계열</button>
+          </div>
           <span class="card-badge" id="topoBadge"></span>
         </div>
-        <div class="topo-time-ctrl">
+        <div class="topo-time-ctrl" id="topoTimeCtrl" style="display:none">
           <button class="topo-play-btn" id="topoPlayBtn" title="재생/일시정지">&#9654;</button>
           <div style="flex:1">
             <input type="range" id="topoTimeSlider" min="0" max="100" value="0" step="1" style="width:100%">
@@ -391,7 +398,9 @@ select:hover{border-color:var(--blue)}
           </select>
         </div>
         <div class="card-title" style="margin-bottom:8px">두피 토포그래피</div>
-        <div class="topo-wrap" id="topoMap"></div>
+        <div class="topo-canvas-wrap">
+          <canvas id="topoCanvas" width="480" height="520"></canvas>
+        </div>
       </div>
     </div>
 
@@ -876,60 +885,210 @@ function renderTS(){
   charts['ts']=new Chart($('tsChart'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:datasets.length>1,labels:{color:TC,font:{size:11},boxWidth:10,padding:10}}},scales:{x:{title:{display:true,text:'시간 (s)',color:TC,font:{size:11}},ticks:{color:TC,maxTicksLimit:10,font:{size:10}},grid:{color:GC}},y:{title:{display:true,text:'진폭 (µV)',color:TC,font:{size:11}},ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 }
 
-function topoColor(norm){
-  const stops=[[0,[83,74,183]],[0.25,[55,138,221]],[0.5,[60,80,60]],[0.75,[216,90,48]],[1,[220,50,50]]];
-  let lo=stops[0],hi=stops[stops.length-1];
-  for(let i=0;i<stops.length-1;i++)if(norm>=stops[i][0]&&norm<=stops[i+1][0]){lo=stops[i];hi=stops[i+1];break}
+// ── Topography (Canvas IDW interpolation) ──
+
+const TOPO_COLOR_STOPS=[
+  [0,   [53,74,183]],
+  [0.25,[55,138,221]],
+  [0.5, [30,100,80]],
+  [0.75,[216,90,48]],
+  [1,   [220,50,50]]
+];
+
+function topoColorRGB(norm){
+  const s=TOPO_COLOR_STOPS;
+  let lo=s[0],hi=s[s.length-1];
+  for(let i=0;i<s.length-1;i++)if(norm>=s[i][0]&&norm<=s[i+1][0]){lo=s[i];hi=s[i+1];break}
   const t=(norm-lo[0])/(hi[0]-lo[0]||1);
-  return`rgb(${Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*t)},${Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*t)},${Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*t)})`;
+  return[
+    Math.round(lo[1][0]+(hi[1][0]-lo[1][0])*t),
+    Math.round(lo[1][1]+(hi[1][1]-lo[1][1])*t),
+    Math.round(lo[1][2]+(hi[1][2]-lo[1][2])*t)
+  ];
 }
 
-// epoch 기반 PSD — 특정 구간 데이터만 사용
-function getPSDEpoch(ch, data, startSamp, epochSamp){
-  const arr=data[ch];
-  const s=Math.max(0,startSamp), e=Math.min(arr.length, s+epochSamp);
-  const seg=arr.slice(s,e);
-  const uv=new Float64Array(seg.length);
-  for(let i=0;i<seg.length;i++)uv[i]=seg[i]/1000;
-  const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
-  const c=new Float64Array(uv.length);
-  for(let i=0;i<uv.length;i++)c[i]=uv[i]-mean;
-  const psd=fft(c), freqs=[];
-  for(let i=0;i<psd.length;i++)freqs.push(i*G.sr/psd.length/2);
-  return{freqs,psd};
-}
+// IDW 보간: 각 픽셀에서 모든 채널까지 거리 기반 가중 평균
+function drawTopoCanvas(powersMap, gradPowers){
+  const canvas=$('topoCanvas');
+  if(!canvas)return;
+  const W=480,H=520,R=200,cx=W/2,cy=H/2-14;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
 
-function drawTopoSVG(powers){
-  const vals=Object.values(powers).filter(v=>v!=null);
-  if(!vals.length)return'';
-  const mn=Math.min(...vals), mx=Math.max(...vals);
-  const W=480,H=500,R=210,cx=W/2,cy=H/2-8;
-  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
-  svg+=`<path d="M${cx-13},${cy-R} Q${cx},${cy-R-26} ${cx+13},${cy-R}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>`;
-  svg+=`<ellipse cx="${cx-R-9}" cy="${cy}" rx="9" ry="15" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>`;
-  svg+=`<ellipse cx="${cx+R+9}" cy="${cy}" rx="9" ry="15" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>`;
-  svg+=`<ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${R}" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>`;
-  svg+=`<line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
-  svg+=`<line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+  // 채널 위치 + 파워 수집
+  const chs=[];
   G.channels.forEach(ch=>{
-    if(!TOPO_POS[ch]||powers[ch]==null)return;
-    const p=TOPO_POS[ch], x=cx+(p.x-.5)*R*2*.91, y=cy+(p.y-.5)*R*2*.91;
-    const norm=(mx>mn)?(powers[ch]-mn)/(mx-mn):.5;
-    const col=topoColor(norm);
-    svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="22" fill="${col}" opacity=".87"/>`;
-    svg+=`<text x="${x.toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" class="topo-label">${ch}</text>`;
-    svg+=`<text x="${x.toFixed(1)}" y="${(y+8).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.75)" font-family="'Inter',system-ui">${(powers[ch]/1e6).toFixed(1)}</text>`;
+    if(TOPO_POS[ch]&&powersMap[ch]!=null){
+      const p=TOPO_POS[ch];
+      chs.push({
+        ch,
+        px: cx+(p.x-.5)*R*2*.92,
+        py: cy+(p.y-.5)*R*2*.92,
+        val: powersMap[ch]
+      });
+    }
   });
-  const gid='g'+Date.now();
-  svg+=`<defs><linearGradient id="${gid}"><stop offset="0%" stop-color="rgb(83,74,183)"/><stop offset="25%" stop-color="rgb(55,138,221)"/><stop offset="50%" stop-color="rgb(60,80,60)"/><stop offset="75%" stop-color="rgb(216,90,48)"/><stop offset="100%" stop-color="rgb(220,50,50)"/></linearGradient></defs>`;
-  svg+=`<rect x="${cx-70}" y="${H-30}" width="140" height="8" rx="3" fill="url(#${gid})"/>`;
-  svg+=`<text x="${cx-70}" y="${H-12}" font-size="9" fill="rgba(255,255,255,0.35)" font-family="'Inter',system-ui">낮음</text>`;
-  svg+=`<text x="${cx+70}" y="${H-12}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.35)" font-family="'Inter',system-ui">높음</text>`;
-  svg+=`<text x="${cx}" y="${H-12}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.45)" font-family="'Inter',system-ui">${BANDS[$('topoBand').value].label}</text>`;
-  svg+=`</svg>`;
-  return svg;
+  if(!chs.length)return;
+
+  const vals=chs.map(c=>c.val);
+  const mn=Math.min(...vals), mx=Math.max(...vals), rng=mx-mn||1;
+
+  // IDW 픽셀 계산 — 머리 윤곽 내부만
+  const imgData=ctx.createImageData(W,H);
+  const data=imgData.data;
+  const p=2; // IDW power
+
+  for(let py=0;py<H;py++){
+    for(let px=0;px<W;px++){
+      const dx=px-cx, dy=py-cy;
+      if(dx*dx+dy*dy>R*R*1.04)continue; // 머리 윤곽 밖 skip
+
+      // IDW 보간
+      let sumW=0, sumV=0;
+      for(const c of chs){
+        const d2=(px-c.px)**2+(py-c.py)**2;
+        if(d2<0.5){sumV=c.val;sumW=1;break;}
+        const w=1/Math.pow(d2,p/2);
+        sumW+=w; sumV+=w*c.val;
+      }
+      const norm=(sumV/sumW-mn)/rng;
+
+      // 시간 그라데이션 블렌딩
+      let r,g,b;
+      if(gradPowers&&gradPowers.length>1){
+        // gradPowers: [{powers, time}] 배열 — 각 epoch의 파워맵
+        // 현재 픽셀에서의 각 epoch IDW 값 계산
+        const epochNorms=gradPowers.map(ep=>{
+          const eChs=chs.map(c=>({...c,val:ep.powers[c.ch]??c.val}));
+          const eVals=eChs.map(x=>x.val);
+          const emn=Math.min(...eVals),emx=Math.max(...eVals),ern=emx-emn||1;
+          let sw=0,sv=0;
+          for(const c of eChs){
+            const d2=(px-c.px)**2+(py-c.py)**2;
+            if(d2<0.5){sv=c.val;sw=1;break;}
+            const w=1/Math.pow(d2,p/2);sw+=w;sv+=w*c.val;
+          }
+          return(sv/sw-emn)/ern;
+        });
+        // 시간축 그라데이션: 초기→중기→말기 색상 혼합
+        // 각 epoch에 시간 위치 기반 색조 오프셋 적용
+        let rr=0,gg=0,bb=0;
+        epochNorms.forEach((en,i)=>{
+          const timeFrac=i/(gradPowers.length-1||1);
+          // 시간 위치를 색온도 오프셋으로: 초기=쿨(청), 말기=웜(주황) 방향으로 색상 틸트
+          const tiltedNorm=Math.max(0,Math.min(1, en*0.85 + timeFrac*0.15));
+          const [cr,cg,cb]=topoColorRGB(tiltedNorm);
+          rr+=cr; gg+=cg; bb+=cb;
+        });
+        r=Math.round(rr/epochNorms.length);
+        g=Math.round(gg/epochNorms.length);
+        b=Math.round(bb/epochNorms.length);
+      } else {
+        [r,g,b]=topoColorRGB(Math.max(0,Math.min(1,norm)));
+      }
+
+      // 머리 가장자리 페이드
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const fade=dist>R*0.88?Math.max(0,1-(dist-R*0.88)/(R*0.15)):1;
+      const idx=(py*W+px)*4;
+      data[idx]=r; data[idx+1]=g; data[idx+2]=b; data[idx+3]=Math.round(220*fade);
+    }
+  }
+  ctx.putImageData(imgData,0,0);
+
+  // 머리 윤곽선
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,R,R,0,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.25)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+  // 코
+  ctx.beginPath();
+  ctx.moveTo(cx-12,cy-R+2);
+  ctx.quadraticCurveTo(cx,cy-R-24,cx+12,cy-R+2);
+  ctx.strokeStyle='rgba(255,255,255,0.22)';
+  ctx.lineWidth=1.5; ctx.stroke();
+  // 귀
+  [[cx-R-8,cy],[cx+R+8,cy]].forEach(([ex,ey])=>{
+    ctx.beginPath();
+    ctx.ellipse(ex,ey,9,15,0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';
+    ctx.lineWidth=1.5; ctx.stroke();
+  });
+  // 중심선
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle='rgba(255,255,255,0.08)';
+  ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 채널 레이블
+  const fs=10;
+  ctx.font=`600 ${fs}px Inter,system-ui,sans-serif`;
+  ctx.textAlign='center';
+  chs.forEach(c=>{
+    const norm2=(c.val-mn)/rng;
+    // 레이블 배경 (가독성)
+    ctx.fillStyle='rgba(0,0,0,0.45)';
+    const tw=ctx.measureText(c.ch).width;
+    ctx.fillRect(c.px-tw/2-2,c.py-fs-2,tw+4,fs+4);
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    ctx.fillText(c.ch,c.px,c.py);
+    // 파워 수치
+    ctx.font=`400 8px Inter,system-ui,sans-serif`;
+    ctx.fillStyle='rgba(255,255,255,0.65)';
+    ctx.fillText((c.val/1e6).toFixed(1),c.px,c.py+10);
+    ctx.font=`600 ${fs}px Inter,system-ui,sans-serif`;
+  });
+
+  // 컬러바
+  const barX=cx-70,barY=H-30,barW=140,barH=8;
+  const grad=ctx.createLinearGradient(barX,0,barX+barW,0);
+  grad.addColorStop(0,'rgb(53,74,183)');
+  grad.addColorStop(0.25,'rgb(55,138,221)');
+  grad.addColorStop(0.5,'rgb(30,100,80)');
+  grad.addColorStop(0.75,'rgb(216,90,48)');
+  grad.addColorStop(1,'rgb(220,50,50)');
+  ctx.fillStyle=grad;
+  ctx.beginPath();
+  ctx.roundRect(barX,barY,barW,barH,3);
+  ctx.fill();
+  ctx.font='9px Inter,system-ui,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.fillText('낮음',barX,H-14);
+  ctx.textAlign='right';
+  ctx.fillText('높음',barX+barW,H-14);
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.fillText(BANDS[$('topoBand').value].label,cx,H-14);
+
+  // 시간 그라데이션 모드일 때 타임라인 표시
+  if(gradPowers&&gradPowers.length>1){
+    ctx.font='9px Inter,system-ui,sans-serif';
+    ctx.textAlign='left';
+    ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.fillText(`전체 ${gradPowers.length}개 epoch 평균`,barX,H-2);
+  }
 }
 
+function getPowersForEpoch(startSamp, epochSamp){
+  const d=getActiveData();
+  const band=$('topoBand').value;
+  const[lo,hi]=BANDS[band].range;
+  const powers={};
+  G.channels.forEach(ch=>{
+    if(TOPO_POS[ch]){
+      const{freqs,psd}=getPSDEpoch(ch,d,startSamp,epochSamp);
+      powers[ch]=getBP(psd,freqs,lo,hi);
+    }
+  });
+  return powers;
+}
+
+let _topoMode='all'; // 'all' | 'epoch'
 let _topoTimer=null;
 
 function initTopoSlider(){
@@ -948,28 +1107,57 @@ function renderTopoAtEpoch(epochIdx){
   const epochSec=parseInt($('topoEpochSel').value)||2;
   const epochSamp=epochSec*G.sr;
   const startSamp=epochIdx*epochSamp;
-  const d=getActiveData();
-  const band=$('topoBand').value;
-  const[lo,hi]=BANDS[band].range;
-  const powers={};
-  G.channels.forEach(ch=>{
-    if(TOPO_POS[ch]){
-      const{freqs,psd}=getPSDEpoch(ch,d,startSamp,epochSamp);
-      powers[ch]=getBP(psd,freqs,lo,hi);
-    }
-  });
-  $('topoMap').innerHTML=drawTopoSVG(powers);
-  const t=(startSamp/G.sr).toFixed(1);
-  $('topoTimeLbl').textContent=t+' s';
+  const powers=getPowersForEpoch(startSamp,epochSamp);
+  drawTopoCanvas(powers, null);
+  $('topoTimeLbl').textContent=(startSamp/G.sr).toFixed(1)+' s';
+}
+
+function renderTopoAll(){
+  // 전체 구간 — 모든 epoch 수집해서 시간 그라데이션으로 렌더
+  const epochSec=parseInt($('topoEpochSel').value)||2;
+  const epochSamp=epochSec*G.sr;
+  const totalSamp=G.rawData[G.channels[0]].length;
+  const nEpochs=Math.floor(totalSamp/epochSamp);
+  if(nEpochs===0){
+    const p=getPowersForEpoch(0,totalSamp);
+    drawTopoCanvas(p,null);
+    return;
+  }
+  // 전체 파워 (단순 평균)
+  const allPowers={};
+  const gradPowers=[];
+  G.channels.forEach(ch=>{if(TOPO_POS[ch])allPowers[ch]=0});
+  for(let i=0;i<nEpochs;i++){
+    const ep=getPowersForEpoch(i*epochSamp,epochSamp);
+    gradPowers.push({powers:ep,time:i*epochSec});
+    G.channels.forEach(ch=>{if(TOPO_POS[ch]&&ep[ch]!=null)allPowers[ch]=(allPowers[ch]||0)+ep[ch]/nEpochs});
+  }
+  drawTopoCanvas(allPowers, gradPowers);
 }
 
 function renderTopo(){
   initTopoSlider();
-  renderTopoAtEpoch(parseInt($('topoTimeSlider').value)||0);
+  if(_topoMode==='all') renderTopoAll();
+  else renderTopoAtEpoch(parseInt($('topoTimeSlider').value)||0);
 }
 
-// 슬라이더·셀렉트·재생 이벤트는 initSliders에서 연결
 function initTopoControls(){
+  $('topoModeAll').onclick=()=>{
+    _topoMode='all';
+    $('topoModeAll').classList.add('active');
+    $('topoModeEpoch').classList.remove('active');
+    $('topoTimeCtrl').style.display='none';
+    stopTopoPlay();
+    renderTopoAll();
+  };
+  $('topoModeEpoch').onclick=()=>{
+    _topoMode='epoch';
+    $('topoModeEpoch').classList.add('active');
+    $('topoModeAll').classList.remove('active');
+    $('topoTimeCtrl').style.display='';
+    initTopoSlider();
+    renderTopoAtEpoch(0);
+  };
   $('topoTimeSlider').oninput=()=>{
     stopTopoPlay();
     renderTopoAtEpoch(parseInt($('topoTimeSlider').value));
@@ -977,16 +1165,17 @@ function initTopoControls(){
   $('topoEpochSel').onchange=()=>{
     stopTopoPlay();
     initTopoSlider();
-    renderTopoAtEpoch(0);
+    if(_topoMode==='all') renderTopoAll();
+    else renderTopoAtEpoch(0);
   };
-  $('topoBand').onchange=()=>renderTopoAtEpoch(parseInt($('topoTimeSlider').value)||0);
+  $('topoBand').onchange=()=>renderTopo();
   $('topoPlayBtn').onclick=toggleTopoPlay;
 }
 
 function toggleTopoPlay(){
   if(_topoTimer){stopTopoPlay();return;}
   $('topoPlayBtn').classList.add('playing');
-  $('topoPlayBtn').textContent='⏸';
+  $('topoPlayBtn').innerHTML='&#9646;&#9646;';
   const sl=$('topoTimeSlider');
   const max=parseInt(sl.max)||0;
   if(parseInt(sl.value)>=max) sl.value=0;
