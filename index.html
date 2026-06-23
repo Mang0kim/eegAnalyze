@@ -191,7 +191,7 @@ select:hover{border-color:var(--blue)}
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
   <div class="hdr-credit">
     <div class="hdr-credit-main">국민대학교 기술과디자인연구센터 김창수 제작</div>
-    <div class="hdr-credit-ver">v1.4.1</div>
+    <div class="hdr-credit-ver">v1.4.2</div>
   </div>
   <div class="sp"></div>
   <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
@@ -908,7 +908,7 @@ function topoColorRGB(norm){
 }
 
 // IDW 보간: 각 픽셀에서 모든 채널까지 거리 기반 가중 평균
-function drawTopoCanvas(powersMap, gradPowers){
+function drawTopoCanvas(powersMap){
   const canvas=$('topoCanvas');
   if(!canvas)return;
   const W=480,H=520,R=200,cx=W/2,cy=H/2-14;
@@ -952,41 +952,8 @@ function drawTopoCanvas(powersMap, gradPowers){
         const w=1/Math.pow(d2,p/2);
         sumW+=w; sumV+=w*c.val;
       }
-      const norm=(sumV/sumW-mn)/rng;
-
-      // 시간 그라데이션 블렌딩
-      let r,g,b;
-      if(gradPowers&&gradPowers.length>1){
-        // gradPowers: [{powers, time}] 배열 — 각 epoch의 파워맵
-        // 현재 픽셀에서의 각 epoch IDW 값 계산
-        const epochNorms=gradPowers.map(ep=>{
-          const eChs=chs.map(c=>({...c,val:ep.powers[c.ch]??c.val}));
-          const eVals=eChs.map(x=>x.val);
-          const emn=Math.min(...eVals),emx=Math.max(...eVals),ern=emx-emn||1;
-          let sw=0,sv=0;
-          for(const c of eChs){
-            const d2=(px-c.px)**2+(py-c.py)**2;
-            if(d2<0.5){sv=c.val;sw=1;break;}
-            const w=1/Math.pow(d2,p/2);sw+=w;sv+=w*c.val;
-          }
-          return(sv/sw-emn)/ern;
-        });
-        // 시간축 그라데이션: 초기→중기→말기 색상 혼합
-        // 각 epoch에 시간 위치 기반 색조 오프셋 적용
-        let rr=0,gg=0,bb=0;
-        epochNorms.forEach((en,i)=>{
-          const timeFrac=i/(gradPowers.length-1||1);
-          // 시간 위치를 색온도 오프셋으로: 초기=쿨(청), 말기=웜(주황) 방향으로 색상 틸트
-          const tiltedNorm=Math.max(0,Math.min(1, en*0.85 + timeFrac*0.15));
-          const [cr,cg,cb]=topoColorRGB(tiltedNorm);
-          rr+=cr; gg+=cg; bb+=cb;
-        });
-        r=Math.round(rr/epochNorms.length);
-        g=Math.round(gg/epochNorms.length);
-        b=Math.round(bb/epochNorms.length);
-      } else {
-        [r,g,b]=topoColorRGB(Math.max(0,Math.min(1,norm)));
-      }
+      const norm=Math.max(0,Math.min(1,(sumV/sumW-mn)/rng));
+      const [r,g,b]=topoColorRGB(norm);
 
       // 머리 가장자리 페이드
       const dist=Math.sqrt(dx*dx+dy*dy);
@@ -1053,7 +1020,7 @@ function drawTopoCanvas(powersMap, gradPowers){
   grad.addColorStop(1,'rgb(220,50,50)');
   ctx.fillStyle=grad;
   ctx.beginPath();
-  ctx.roundRect(barX,barY,barW,barH,3);
+  ctx.rect(barX,barY,barW,barH);
   ctx.fill();
   ctx.font='9px Inter,system-ui,sans-serif';
   ctx.textAlign='left';
@@ -1065,13 +1032,6 @@ function drawTopoCanvas(powersMap, gradPowers){
   ctx.fillStyle='rgba(255,255,255,0.5)';
   ctx.fillText(BANDS[$('topoBand').value].label,cx,H-14);
 
-  // 시간 그라데이션 모드일 때 타임라인 표시
-  if(gradPowers&&gradPowers.length>1){
-    ctx.font='9px Inter,system-ui,sans-serif';
-    ctx.textAlign='left';
-    ctx.fillStyle='rgba(255,255,255,0.3)';
-    ctx.fillText(`전체 ${gradPowers.length}개 epoch 평균`,barX,H-2);
-  }
 }
 
 function getPowersForEpoch(startSamp, epochSamp){
@@ -1079,11 +1039,22 @@ function getPowersForEpoch(startSamp, epochSamp){
   const band=$('topoBand').value;
   const[lo,hi]=BANDS[band].range;
   const powers={};
+  const sr=G.sr;
   G.channels.forEach(ch=>{
-    if(TOPO_POS[ch]){
-      const{freqs,psd}=getPSDEpoch(ch,d,startSamp,epochSamp);
-      powers[ch]=getBP(psd,freqs,lo,hi);
-    }
+    if(!TOPO_POS[ch])return;
+    const arr=d[ch];
+    const s=Math.max(0,startSamp);
+    const e=Math.min(arr.length, s+epochSamp);
+    const seg=arr.slice(s,e);
+    const uv=new Float64Array(seg.length);
+    for(let i=0;i<seg.length;i++)uv[i]=seg[i]/1000;
+    const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
+    const c=new Float64Array(uv.length);
+    for(let i=0;i<uv.length;i++)c[i]=uv[i]-mean;
+    const psd=fft(c);
+    const freqs=[];
+    for(let i=0;i<psd.length;i++)freqs.push(i*sr/psd.length/2);
+    powers[ch]=getBP(psd,freqs,lo,hi);
   });
   return powers;
 }
@@ -1108,31 +1079,30 @@ function renderTopoAtEpoch(epochIdx){
   const epochSamp=epochSec*G.sr;
   const startSamp=epochIdx*epochSamp;
   const powers=getPowersForEpoch(startSamp,epochSamp);
-  drawTopoCanvas(powers, null);
+  drawTopoCanvas(powers);
   $('topoTimeLbl').textContent=(startSamp/G.sr).toFixed(1)+' s';
 }
 
 function renderTopoAll(){
-  // 전체 구간 — 모든 epoch 수집해서 시간 그라데이션으로 렌더
-  const epochSec=parseInt($('topoEpochSel').value)||2;
-  const epochSamp=epochSec*G.sr;
-  const totalSamp=G.rawData[G.channels[0]].length;
-  const nEpochs=Math.floor(totalSamp/epochSamp);
-  if(nEpochs===0){
-    const p=getPowersForEpoch(0,totalSamp);
-    drawTopoCanvas(p,null);
-    return;
-  }
-  // 전체 파워 (단순 평균)
-  const allPowers={};
-  const gradPowers=[];
-  G.channels.forEach(ch=>{if(TOPO_POS[ch])allPowers[ch]=0});
-  for(let i=0;i<nEpochs;i++){
-    const ep=getPowersForEpoch(i*epochSamp,epochSamp);
-    gradPowers.push({powers:ep,time:i*epochSec});
-    G.channels.forEach(ch=>{if(TOPO_POS[ch]&&ep[ch]!=null)allPowers[ch]=(allPowers[ch]||0)+ep[ch]/nEpochs});
-  }
-  drawTopoCanvas(allPowers, gradPowers);
+  // 전체 구간 파워: 단일 epoch로 전 샘플 처리 (가장 빠르고 안정적)
+  const d=getActiveData();
+  const band=$('topoBand').value;
+  const[lo,hi]=BANDS[band].range;
+  const powers={};
+  G.channels.forEach(ch=>{
+    if(!TOPO_POS[ch])return;
+    const arr=d[ch];
+    const uv=new Float64Array(arr.length);
+    for(let i=0;i<arr.length;i++)uv[i]=arr[i]/1000;
+    const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
+    const c=new Float64Array(uv.length);
+    for(let i=0;i<uv.length;i++)c[i]=uv[i]-mean;
+    const psd=fft(c);
+    const freqs=[];
+    for(let i=0;i<psd.length;i++)freqs.push(i*G.sr/psd.length/2);
+    powers[ch]=getBP(psd,freqs,lo,hi);
+  });
+  drawTopoCanvas(powers);
 }
 
 function renderTopo(){
