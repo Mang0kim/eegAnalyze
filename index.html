@@ -149,6 +149,12 @@ select:hover{border-color:var(--blue)}
 .chart-wrap{position:relative;width:100%}
 
 /* Experiment */
+.exp-plan-btn{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .15s}
+.exp-plan-btn:hover{border-color:var(--amber)}
+.exp-plan-btn.active{border-color:var(--amber);background:rgba(186,117,23,0.1)}
+.exp-plan-label{font-size:13px;font-weight:600;color:var(--amber);margin-bottom:4px}
+.exp-plan-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.exp-plan-desc span{font-size:10px;color:var(--text3)}
 .exp-seg-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px}
 .exp-seg-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .exp-seg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -156,7 +162,7 @@ select:hover{border-color:var(--blue)}
 .exp-file-drop{border:1px dashed var(--border2);border-radius:var(--radius);padding:6px;text-align:center;cursor:pointer;font-size:10px;color:var(--text3);transition:all .15s;margin-bottom:6px}
 .exp-file-drop:hover{border-color:var(--blue);color:var(--blue)}
 .exp-file-drop.loaded{border-color:var(--teal);color:var(--teal);border-style:solid}
-.exp-time-row{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)}
+.exp-time-row{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-top:4px}
 .exp-time-row input{width:44px;background:var(--bg);border:0.5px solid var(--border2);border-radius:4px;color:var(--text);font-family:inherit;font-size:10px;padding:2px 5px}
 .exp-result-box{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
 .exp-result-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
@@ -206,7 +212,7 @@ select:hover{border-color:var(--blue)}
   <div class="logo">EEG <span>Analyzer</span><span class="logo-sub">BS24 · 10-20 System</span></div>
   <div class="hdr-credit">
     <div class="hdr-credit-main">국민대학교 기술과디자인연구센터 김창수 제작</div>
-    <div class="hdr-credit-ver">v2.1.0</div>
+    <div class="hdr-credit-ver">v3.0.1</div>
   </div>
   <div class="sp"></div>
   <div class="hdr-meta" id="hdrMeta">파일을 로드하세요</div>
@@ -464,56 +470,43 @@ select:hover{border-color:var(--blue)}
       </div>
       <div class="card" style="margin-top:0"><div class="card-title">채널별 std 변화 (µV)</div><div class="chart-wrap" style="height:210px"><canvas id="cmpStdChart" role="img" aria-label="Std comparison"></canvas></div></div>
     </div>
+  </div><!-- /mainContent -->
 
-    <!-- Experiment -->
-    <div id="pane-experiment" style="display:none">
-      <!-- 실험 설정 -->
-      <div class="card" id="expSetupCard">
-        <div class="card-title">실험 구간 설정 <span style="font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">— 현재 로드된 파일을 단일 구간으로 지정하거나, 5개 파일을 순서대로 업로드</span></div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px" id="expSegCards"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
-          <div>
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">조건 1 이름</div>
-            <input id="expCond1" type="text" value="조건 1" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:5px 8px">
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">조건 2 이름</div>
-            <input id="expCond2" type="text" value="조건 2" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:5px 8px">
-          </div>
+  <!-- Experiment — mainContent와 독립, 항상 접근 가능 -->
+  <div id="pane-experiment" style="display:none">
+    <!-- 방안 선택 -->
+    <div class="card">
+      <div class="card-title">실험 방안 선택</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div class="exp-plan-btn active" id="planBtn1" onclick="selectPlan(1)">
+          <div class="exp-plan-label">방안 1</div>
+          <div class="exp-plan-desc">파일 3개 — BL / 조건1 / 조건2<br><span>이완도 지표 정적 비교 (시계열 무관)</span></div>
         </div>
-        <button class="run-btn" id="expRunBtn" style="background:var(--amber)" disabled>실험 분석 실행</button>
-        <div class="prog-wrap" id="expProgWrap">
-          <div class="prog-bar-bg"><div class="prog-bar" id="expProgBar" style="background:var(--amber)"></div></div>
-          <div class="prog-label" id="expProgLabel"></div>
+        <div class="exp-plan-btn" id="planBtn2" onclick="selectPlan(2)">
+          <div class="exp-plan-label">방안 2</div>
+          <div class="exp-plan-desc">파일 3개 — BL / [각성→조건1] / [각성→조건2]<br><span>이완 소요 시간 + 이완 정도 시계열 비교</span></div>
         </div>
       </div>
-
-      <!-- 결과 -->
-      <div id="expResults" style="display:none">
-        <div class="card">
-          <div class="card-title">이완 소요 시간 — 가설 검증</div>
-          <div id="expHypNote" style="font-size:11px;color:var(--text2);margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:var(--radius);border-left:2px solid var(--amber)"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="expResultGrid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px">조건 1 이름</div>
+          <input id="expCond1" type="text" value="Amber 조명" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:5px 8px">
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-          <div class="card">
-            <div class="card-title">α/β ratio — 각성→이완 추이</div>
-            <div style="font-size:10px;color:var(--text3);margin-bottom:6px" id="expAbNote"></div>
-            <div class="chart-wrap" style="height:220px"><canvas id="expAbChart"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-title">후두부 α — 각성→이완 추이</div>
-            <div style="font-size:10px;color:var(--text3);margin-bottom:6px" id="expAlphaNote"></div>
-            <div class="chart-wrap" style="height:220px"><canvas id="expAlphaChart"></canvas></div>
-          </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px">조건 2 이름</div>
+          <input id="expCond2" type="text" value="일반 조명" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:5px 8px">
         </div>
-        <div class="card">
-          <div class="card-title">구간별 α/β ratio 평균 (BL / 각성1 / 조건1 / 각성2 / 조건2)</div>
-          <div class="chart-wrap" style="height:200px"><canvas id="expSegChart"></canvas></div>
-        </div>
+      </div>
+      <div id="expFileArea"></div>
+      <button class="run-btn" id="expRunBtn" style="background:var(--amber);margin-top:12px" disabled>실험 분석 실행</button>
+      <div class="prog-wrap" id="expProgWrap">
+        <div class="prog-bar-bg"><div class="prog-bar" id="expProgBar" style="background:var(--amber)"></div></div>
+        <div class="prog-label" id="expProgLabel"></div>
       </div>
     </div>
+    <div id="expResults" style="display:none"></div>
   </div>
+
 </main>
 </div>
 
@@ -708,8 +701,11 @@ document.querySelectorAll('.tab').forEach(t=>{
     document.querySelectorAll('.tab').forEach(x=>{x.classList.remove('active');if(x.dataset.tab!=='experiment')x.style.color=''});
     t.classList.add('active');
     if(t.dataset.tab==='experiment')t.style.color='var(--amber)';
-    ['psd','band','ts','topo','arousal','compare','experiment'].forEach(p=>$('pane-'+p).style.display='none');
-    $('pane-'+t.dataset.tab).style.display='';
+    // 일반 pane 숨김 (experiment 제외)
+    ['psd','band','ts','topo','arousal','compare'].forEach(p=>$('pane-'+p).style.display='none');
+    // experiment pane은 mainContent 밖에 있으므로 별도 처리
+    $('pane-experiment').style.display=t.dataset.tab==='experiment'?'':'none';
+    if(t.dataset.tab!=='experiment') $('pane-'+t.dataset.tab).style.display='';
     $('tsCtrl').style.display=t.dataset.tab==='ts'?'':'none';
     if(t.dataset.tab!=='topo')stopTopoPlay();
     if(t.dataset.tab==='experiment')initExpTab();
@@ -1414,62 +1410,91 @@ function renderStdCompare(){
 }
 
 // ══════════════════════════════════════
-// 실험 분석 (이완 소요 시간)
+// 실험 분석 — 방안 1 / 방안 2
 // ══════════════════════════════════════
-const EXP_SEGS=[
-  {key:'ebl',  label:'BL',   color:'#7F77DD', desc:'기본 뇌파 (암실·무자극)'},
-  {key:'ear1', label:'각성1', color:'#D85A30', desc:'각성 유도 (인지 과제)'},
-  {key:'ec1',  label:'조건1', color:'#1D9E75', desc:'조명 조건 1'},
-  {key:'ear2', label:'각성2', color:'#BA7517', desc:'각성 유도 (인지 과제)'},
-  {key:'ec2',  label:'조건2', color:'#378ADD', desc:'조명 조건 2'},
-];
 const OCC_CHS=['O1','Oz','O2'];
 const FRONT_CHS=['F3','Fz','F4'];
 const CENT_CHS=['C3','Cz','C4'];
 
-let expSegs={};   // key→{raw,ecg,eog,sr,duration,channels}
+// 방안별 파일 정의
+const PLAN_DEFS={
+  1:[
+    {key:'p_bl', label:'1번 파일 — BL',   color:'#7F77DD', desc:'기본 뇌파 (암실·무자극·EC)', mode:'range'},
+    {key:'p_c1', label:'2번 파일 — 조건1', color:'#1D9E75', desc:'실험 조건 1 전체 구간',      mode:'range'},
+    {key:'p_c2', label:'3번 파일 — 조건2', color:'#378ADD', desc:'실험 조건 2 전체 구간',      mode:'range'},
+  ],
+  2:[
+    {key:'p_bl', label:'1번 파일 — BL',   color:'#7F77DD', desc:'기본 뇌파 (암실·무자극·EC)', mode:'range'},
+    {key:'p_f1', label:'2번 파일 — 조건1', color:'#1D9E75', desc:'각성 유도 → 조건1 자극 (연속 측정)', mode:'arousal'},
+    {key:'p_f2', label:'3번 파일 — 조건2', color:'#378ADD', desc:'각성 유도 → 조건2 자극 (연속 측정)', mode:'arousal'},
+  ]
+};
+
+let curPlan=1;
+let expSegs={};
 let expClean={};
-let expResults=null;
 let expInited=false;
 
 function initExpTab(){
-  if(!expInited){ buildExpCards(); expInited=true; }
+  if(!expInited){selectPlan(1);$('expRunBtn').onclick=runExpAnalysis;expInited=true;}
 }
 
-function buildExpCards(){
-  const el=$('expSegCards');
-  el.innerHTML='';
-  EXP_SEGS.forEach(s=>{
-    el.innerHTML+=`
-    <div class="exp-seg-card">
+function selectPlan(n){
+  curPlan=n;expSegs={};expClean={};
+  $('expResults').style.display='none';
+  $('planBtn1').classList.toggle('active',n===1);
+  $('planBtn2').classList.toggle('active',n===2);
+  $('expRunBtn').disabled=true;
+  buildExpFileArea();
+}
+
+function buildExpFileArea(){
+  const defs=PLAN_DEFS[curPlan];
+  let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">`;
+  defs.forEach(s=>{
+    html+=`<div class="exp-seg-card">
       <div class="exp-seg-header">
         <div class="exp-seg-dot" style="background:${s.color}"></div>
         <div class="exp-seg-name">${s.label}</div>
       </div>
-      <div style="font-size:9px;color:var(--text3);margin-bottom:6px">${s.desc}</div>
+      <div style="font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.5">${s.desc}</div>
       <div class="exp-file-drop" id="expDrop-${s.key}">
         <input type="file" id="expFile-${s.key}" accept=".csv" style="display:none">
         <div id="expDropLbl-${s.key}" style="font-size:10px">CSV 업로드</div>
+      </div>`;
+    if(s.mode==='range'){
+      html+=`<div class="exp-time-row" style="margin-top:4px">
+        <span>분석 구간</span>
+        <input type="number" id="expStart-${s.key}" value="0" min="0" step="1" placeholder="시작s">
+        <span>s ~</span>
+        <input type="number" id="expEnd-${s.key}" value="" min="0" step="1" placeholder="끝s">
+        <span>s</span>
+      </div>`;
+    } else {
+      // 방안 2: 각성 유도 구간 끝(=조건 시작) 입력
+      html+=`<div class="exp-time-row" style="margin-top:4px">
+        <span>각성 종료</span>
+        <input type="number" id="expArSec-${s.key}" value="120" min="0" step="1">
+        <span>s (이후 조건 구간)</span>
       </div>
       <div class="exp-time-row">
-        <span>시작</span>
-        <input type="number" id="expStart-${s.key}" value="0" min="0" step="1">
-        <span>s ~</span>
-        <input type="number" id="expEnd-${s.key}" value="" min="0" step="1">
+        <span>파일 끝</span>
+        <input type="number" id="expEnd-${s.key}" value="" min="0" step="1" placeholder="총길이s">
         <span>s</span>
-      </div>
-    </div>`;
+      </div>`;
+    }
+    html+=`</div>`;
   });
-  EXP_SEGS.forEach(s=>{
-    const drop=$(`expDrop-${s.key}`);
-    const inp=$(`expFile-${s.key}`);
+  html+=`</div>`;
+  $('expFileArea').innerHTML=html;
+  defs.forEach(s=>{
+    const drop=$(`expDrop-${s.key}`),inp=$(`expFile-${s.key}`);
     drop.onclick=()=>inp.click();
     inp.onchange=e=>loadExpSeg(s.key,e.target.files[0]);
-    drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--blue)'};
+    drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--amber)'};
     drop.ondragleave=()=>drop.style.borderColor='';
     drop.ondrop=e=>{e.preventDefault();drop.style.borderColor='';loadExpSeg(s.key,e.dataTransfer.files[0])};
   });
-  $('expRunBtn').onclick=runExpAnalysis;
 }
 
 function loadExpSeg(key,file){
@@ -1478,8 +1503,7 @@ function loadExpSeg(key,file){
   r.onload=e=>{
     try{
       const lines=e.target.result.split('\n').filter(l=>l.trim());
-      const meta=(lines[1]||'').split('\t');
-      const sr=parseInt(meta[1])||250;
+      const sr=parseInt((lines[1]||'').split('\t')[1])||250;
       const headers=(lines[2]||'').split('\t');
       const eegIdx=[],ecgIdx=[],eogIdx=[];
       headers.forEach((h,i)=>{
@@ -1488,8 +1512,7 @@ function loadExpSeg(key,file){
         if(h.includes('ECG:BP2'))eogIdx.push(i);
       });
       const rawRows=lines.slice(3).filter(l=>l.trim());
-      const raw={};
-      eegIdx.forEach(c=>raw[c.name]=new Float64Array(rawRows.length));
+      const raw={};eegIdx.forEach(c=>raw[c.name]=new Float64Array(rawRows.length));
       let ecg=ecgIdx.length?new Float64Array(rawRows.length):null;
       let eog=eogIdx.length?new Float64Array(rawRows.length):null;
       rawRows.forEach((row,ri)=>{
@@ -1502,7 +1525,8 @@ function loadExpSeg(key,file){
       expSegs[key]={raw,ecg,eog,sr,duration,channels:eegIdx.map(c=>c.name)};
       $(`expDropLbl-${key}`).textContent=file.name.length>16?file.name.slice(0,14)+'…':file.name;
       $(`expDrop-${key}`).classList.add('loaded');
-      if(!$(`expEnd-${key}`).value) $(`expEnd-${key}`).value=Math.floor(duration);
+      // 파일 끝 시간 자동 입력
+      const endEl=$(`expEnd-${key}`);if(endEl&&!endEl.value)endEl.value=Math.floor(duration);
       checkExpReady();
     }catch(err){alert('파싱 오류: '+err.message)}
   };
@@ -1510,11 +1534,10 @@ function loadExpSeg(key,file){
 }
 
 function checkExpReady(){
-  const allLoaded=EXP_SEGS.every(s=>expSegs[s.key]);
-  $('expRunBtn').disabled=!allLoaded;
+  $('expRunBtn').disabled=!PLAN_DEFS[curPlan].every(s=>expSegs[s.key]);
 }
 
-function expGetBandPow(arr,sr,lo,hi){
+function expBandPow(arr,sr,lo,hi){
   const uv=new Float64Array(arr.length);
   for(let i=0;i<arr.length;i++)uv[i]=arr[i]/1000;
   const mean=uv.reduce((a,b)=>a+b,0)/uv.length;
@@ -1526,194 +1549,217 @@ function expGetBandPow(arr,sr,lo,hi){
 }
 
 function expEpochMetrics(data,chs,sr,epochSec=2){
-  const epochSamp=epochSec*sr;
-  const len=Object.values(data)[0].length;
+  const epochSamp=epochSec*sr,len=Object.values(data)[0].length;
   const nEpochs=Math.floor(len/epochSamp);
   const abRatios=[],occAlphas=[],times=[];
   const occAvail=OCC_CHS.filter(c=>chs.includes(c));
   const bChs=[...FRONT_CHS,...CENT_CHS].filter(c=>chs.includes(c));
   for(let i=0;i<nEpochs;i++){
     const s=i*epochSamp,e=s+epochSamp;
-    times.push(parseFloat((s/sr).toFixed(1)));
-    let sumA=0;occAvail.forEach(ch=>{sumA+=expGetBandPow(data[ch].slice(s,e),sr,8,13)});
-    const occA=occAvail.length?sumA/occAvail.length:0;
-    occAlphas.push(occA);
-    let sumB=0;bChs.forEach(ch=>{sumB+=expGetBandPow(data[ch].slice(s,e),sr,13,30)});
+    times.push(+(s/sr).toFixed(1));
+    let sumA=0;occAvail.forEach(ch=>{sumA+=expBandPow(data[ch].slice(s,e),sr,8,13)});
+    const occA=occAvail.length?sumA/occAvail.length:0;occAlphas.push(occA);
+    let sumB=0;bChs.forEach(ch=>{sumB+=expBandPow(data[ch].slice(s,e),sr,13,30)});
     abRatios.push(occA/((bChs.length?sumB/bChs.length:1e-10)||1e-10));
   }
   return{abRatios,occAlphas,times};
 }
 
 function expPreprocess(key){
-  const seg=expSegs[key];
-  const chs=seg.channels;const sr=seg.sr;
+  const seg=expSegs[key];const chs=seg.channels;const sr=seg.sr;
   let data={};chs.forEach(ch=>{data[ch]=new Float64Array(seg.raw[ch])});
-  // 기존 필터 함수 재사용
-  if($('useBp').checked) data=applyBP_exp(data,chs,parseFloat($('bpLo').value),parseInt($('bpHi').value),sr);
-  if($('useNotch').checked) data=applyNotch_exp(data,chs,50,sr);
-  if($('useEcg').checked&&seg.ecg) data=applyRef_exp(data,chs,seg.ecg);
-  if($('useEog').checked&&seg.eog) data=applyRef_exp(data,chs,seg.eog);
+  if($('useBp').checked){
+    const nyq=sr/2,lo=parseFloat($('bpLo').value),hi=parseInt($('bpHi').value);
+    const wo=Math.sqrt(lo*hi)/nyq,Q=Math.sqrt(lo*hi)/(hi-lo);
+    const alpha=Math.sin(Math.PI*wo)/(2*Q),cosW=Math.cos(Math.PI*wo);
+    const b=[alpha,0,-alpha],a=[1+alpha,-2*cosW,1-alpha];
+    const out={};chs.forEach(ch=>{out[ch]=filtfilt(data[ch],b,a)});data=out;
+  }
+  if($('useNotch').checked){
+    const w0=2*Math.PI*50/sr,cosW=Math.cos(w0),r=1-3*(1-cosW)/2;
+    const K=(1-2*r*cosW+r*r)/(2-2*cosW);
+    const b=[K,-2*K*cosW,K],a=[1,-2*r*cosW,r*r];
+    const out={};chs.forEach(ch=>{out[ch]=filtfilt(data[ch],b,a)});data=out;
+  }
+  function refRemove(d,ref){
+    const n=ref.length;let mean=0;for(let i=0;i<n;i++)mean+=ref[i];mean/=n;
+    let std=0;for(let i=0;i<n;i++)std+=(ref[i]-mean)**2;std=Math.sqrt(std/n)||1;
+    const refz=new Float64Array(n);for(let i=0;i<n;i++)refz[i]=(ref[i]-mean)/std;
+    let denom=0;for(let i=0;i<n;i++)denom+=refz[i]**2;
+    const out={};
+    chs.forEach(ch=>{
+      const sig=d[ch];let num=0;for(let i=0;i<n;i++)num+=sig[i]*refz[i];
+      const beta=num/(denom||1);out[ch]=new Float64Array(n);
+      for(let i=0;i<n;i++)out[ch][i]=sig[i]-beta*refz[i];
+    });return out;
+  }
+  if($('useEcg').checked&&seg.ecg)data=refRemove(data,seg.ecg);
+  if($('useEog').checked&&seg.eog)data=refRemove(data,seg.eog);
   return data;
 }
 
-// 기존 filtfilt 재사용 (별칭)
-function applyBP_exp(data,chs,lo,hi,sr){
-  const nyq=sr/2,wo=Math.sqrt(lo*hi)/nyq,Q=Math.sqrt(lo*hi)/(hi-lo);
-  const alpha=Math.sin(Math.PI*wo)/(2*Q),cosW=Math.cos(Math.PI*wo);
-  const b=[alpha,0,-alpha],a=[1+alpha,-2*cosW,1-alpha];
-  const out={};chs.forEach(ch=>{out[ch]=filtfilt(data[ch],b,a)});return out;
-}
-function applyNotch_exp(data,chs,freq,sr){
-  const w0=2*Math.PI*freq/sr,cosW=Math.cos(w0),r=1-3*(1-cosW)/2;
-  const K=(1-2*r*cosW+r*r)/(2-2*cosW);
-  const b=[K,-2*K*cosW,K],a=[1,-2*r*cosW,r*r];
-  const out={};chs.forEach(ch=>{out[ch]=filtfilt(data[ch],b,a)});return out;
-}
-function applyRef_exp(data,chs,ref){
-  const n=ref.length;let mean=0;for(let i=0;i<n;i++)mean+=ref[i];mean/=n;
-  let std=0;for(let i=0;i<n;i++)std+=(ref[i]-mean)**2;std=Math.sqrt(std/n)||1;
-  const refz=new Float64Array(n);for(let i=0;i<n;i++)refz[i]=(ref[i]-mean)/std;
-  let denom=0;for(let i=0;i<n;i++)denom+=refz[i]**2;
-  const out={};
-  chs.forEach(ch=>{
-    const sig=data[ch];let num=0;for(let i=0;i<n;i++)num+=sig[i]*refz[i];
-    const beta=num/(denom||1);out[ch]=new Float64Array(n);
-    for(let i=0;i<n;i++)out[ch][i]=sig[i]-beta*refz[i];
-  });
-  return out;
+function getExpSlice(key,startSec,endSec){
+  const d=expClean[key],sr=expSegs[key].sr,chs=expSegs[key].channels;
+  const s=Math.floor(startSec*sr);
+  const e=endSec!=null?Math.min(d[chs[0]].length,Math.floor(endSec*sr)):d[chs[0]].length;
+  const sl={};chs.forEach(ch=>{sl[ch]=d[ch].slice(s,e)});
+  return{sl,sr,chs};
 }
 
 async function runExpAnalysis(){
-  $('expRunBtn').disabled=true;
-  $('expProgWrap').style.display='';
+  $('expRunBtn').disabled=true;$('expProgWrap').style.display='';
   const setP=(p,l)=>{$('expProgBar').style.width=p+'%';$('expProgLabel').textContent=l};
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-
-  // 전처리
-  for(let i=0;i<EXP_SEGS.length;i++){
-    const s=EXP_SEGS[i];
-    setP(Math.round((i/EXP_SEGS.length)*70),`${s.label} 전처리 중...`);
-    await sleep(20);
-    expClean[s.key]=expPreprocess(s.key);
+  const defs=PLAN_DEFS[curPlan];
+  for(let i=0;i<defs.length;i++){
+    setP(Math.round((i/defs.length)*70),`${defs[i].label} 전처리 중...`);await sleep(20);
+    expClean[defs[i].key]=expPreprocess(defs[i].key);
   }
-
-  setP(75,'BL 기준값 산출 중...');await sleep(20);
-
-  function getSlice(key){
-    const d=expClean[key];const sr=expSegs[key].sr;const chs=expSegs[key].channels;
-    const s=Math.floor((parseFloat($(`expStart-${key}`).value)||0)*sr);
-    const e=Math.floor((parseFloat($(`expEnd-${key}`).value)||expSegs[key].duration)*sr);
-    const sl={};chs.forEach(ch=>{sl[ch]=d[ch].slice(s,e)});
-    return{sl,sr,chs};
-  }
-
-  // BL 기준값
-  const {sl:blSl,sr:blSr,chs:blChs}=getSlice('ebl');
+  setP(80,'BL 기준값 산출 중...');await sleep(20);
+  const blStart=parseFloat($('expStart-p_bl').value)||0;
+  const blEnd=parseFloat($('expEnd-p_bl').value)||expSegs['p_bl'].duration;
+  const {sl:blSl,sr:blSr,chs:blChs}=getExpSlice('p_bl',blStart,blEnd);
   const blM=expEpochMetrics(blSl,blChs,blSr);
   const blAb=blM.abRatios.reduce((a,b)=>a+b,0)/blM.abRatios.length;
   const blAlpha=blM.occAlphas.reduce((a,b)=>a+b,0)/blM.occAlphas.length;
+  setP(90,'결과 산출 중...');await sleep(20);
+  const c1=$('expCond1').value||'조건1',c2=$('expCond2').value||'조건2';
 
-  setP(85,'이완 소요 시간 산출 중...');await sleep(20);
-
-  function analyzeTransition(arKey,condKey){
-    const {sl:arSl,sr:arSr,chs:arChs}=getSlice(arKey);
-    const {sl:condSl,sr:condSr,chs:condChs}=getSlice(condKey);
-    const arM=expEpochMetrics(arSl,arChs,arSr);
-    const condM=expEpochMetrics(condSl,condChs,condSr);
-    const arDur=(parseFloat($(`expEnd-${arKey}`).value)||expSegs[arKey].duration)-(parseFloat($(`expStart-${arKey}`).value)||0);
-    const abAll=[...arM.abRatios,...condM.abRatios];
-    const alphaAll=[...arM.occAlphas,...condM.occAlphas];
-    const timesAll=[...arM.times,...condM.times.map(t=>t+arDur)];
-    const epochSec=2;
-    function findRelax(vals,thr){
-      const condVals=vals.slice(arM.abRatios.length);
-      for(let i=0;i<condVals.length;i++)if(condVals[i]>=thr)return parseFloat((i*epochSec).toFixed(1));
-      return null;
+  if(curPlan===1){
+    function condM(key){
+      const start=parseFloat($(`expStart-${key}`).value)||0;
+      const end=parseFloat($(`expEnd-${key}`).value)||expSegs[key].duration;
+      const {sl,sr,chs}=getExpSlice(key,start,end);
+      const m=expEpochMetrics(sl,chs,sr);
+      return{ab:m.abRatios.reduce((a,b)=>a+b,0)/m.abRatios.length,alpha:m.occAlphas.reduce((a,b)=>a+b,0)/m.occAlphas.length};
     }
-    const condAbMean=condM.abRatios.reduce((a,b)=>a+b,0)/condM.abRatios.length;
-    const condAlphaMean=condM.occAlphas.reduce((a,b)=>a+b,0)/condM.occAlphas.length;
-    return{abAll,alphaAll,timesAll,arDur,
-      relaxAb:findRelax(abAll,blAb),relaxAlpha:findRelax(alphaAll,blAlpha),
-      condAbMean,condAlphaMean};
+    const c1M=condM('p_c1'),c2M=condM('p_c2');
+    setP(100,'완료');await sleep(200);
+    $('expProgWrap').style.display='none';$('expRunBtn').disabled=false;
+    renderPlan1({blAb,blAlpha,c1M,c2M,c1,c2});
+  }else{
+    const arSec=120;
+    function analyzeFile(fk){
+      const dur=expSegs[fk].duration;
+      // 각성 종료 시간: 수동 입력값 우선, 없으면 120s
+      const arSec=parseFloat($(`expArSec-${fk}`)?.value)||120;
+      const arEnd=Math.min(arSec,dur);
+      const fileEnd=parseFloat($(`expEnd-${fk}`)?.value)||dur;
+      const {sl:arSl,sr,chs}=getExpSlice(fk,0,arEnd);
+      const {sl:condSl}=getExpSlice(fk,arEnd,fileEnd);
+      const arM=expEpochMetrics(arSl,chs,sr),condM=expEpochMetrics(condSl,chs,sr);
+      const abAll=[...arM.abRatios,...condM.abRatios];
+      const alphaAll=[...arM.occAlphas,...condM.occAlphas];
+      const timesAll=[...arM.times,...condM.times.map(t=>t+arEnd)];
+      function findRelax(vals,thr){const cv=vals.slice(arM.abRatios.length);for(let i=0;i<cv.length;i++)if(cv[i]>=thr)return+(i*2).toFixed(1);return null;}
+      return{abAll,alphaAll,timesAll,arEnd,
+        relaxAb:findRelax(abAll,blAb),relaxAlpha:findRelax(alphaAll,blAlpha),
+        condAbMean:condM.abRatios.reduce((a,b)=>a+b,0)/(condM.abRatios.length||1),
+        condAlphaMean:condM.occAlphas.reduce((a,b)=>a+b,0)/(condM.occAlphas.length||1)};
+    }
+    const r1=analyzeFile('p_f1'),r2=analyzeFile('p_f2');
+    setP(100,'완료');await sleep(200);
+    $('expProgWrap').style.display='none';$('expRunBtn').disabled=false;
+    renderPlan2({blAb,blAlpha,r1,r2,c1,c2});
   }
-
-  // 구간별 평균
-  function segAvgAb(key){const {sl,sr,chs}=getSlice(key);const m=expEpochMetrics(sl,chs,sr);return m.abRatios.reduce((a,b)=>a+b,0)/m.abRatios.length}
-
-  expResults={
-    blAb,blAlpha,
-    t1:analyzeTransition('ear1','ec1'),
-    t2:analyzeTransition('ear2','ec2'),
-    segAbs:{bl:segAvgAb('ebl'),ar1:segAvgAb('ear1'),c1:segAvgAb('ec1'),ar2:segAvgAb('ear2'),c2:segAvgAb('ec2')}
-  };
-
-  setP(100,'완료');await sleep(200);
-  $('expProgWrap').style.display='none';
-  $('expRunBtn').disabled=false;
-  renderExpResults();
 }
 
-function renderExpResults(){
+function renderPlan1({blAb,blAlpha,c1M,c2M,c1,c2}){
   $('expResults').style.display='';
-  const c1=$('expCond1').value||'조건1';
-  const c2=$('expCond2').value||'조건2';
-  const r=expResults;
-  const fmtT=v=>v!=null?v.toFixed(1)+'s':'미도달';
-
-  // 가설 판정
-  const r1ab=r.t1.relaxAb,r2ab=r.t2.relaxAb;
-  const r1al=r.t1.relaxAlpha,r2al=r.t2.relaxAlpha;
-  const winner=(a,b,n1,n2)=>{
-    if(a!=null&&b!=null)return a<b?`${n1}이 더 빠름 (${(b-a).toFixed(1)}s 차이)`:a>b?`${n2}이 더 빠름 (${(a-b).toFixed(1)}s 차이)`:'동일';
-    if(a!=null)return `${n2} 미도달 — ${n1}만 BL 도달`;
-    if(b!=null)return `${n1} 미도달 — ${n2}만 BL 도달`;
-    return '두 조건 모두 BL 수준 미도달';
-  };
-  const hypAb=winner(r1ab,r2ab,c1,c2);
-  const hypAl=winner(r1al,r2al,c1,c2);
-  $('expHypNote').innerHTML=`<b>가설:</b> [각성→${c1} 이완 시간] < [각성→${c2} 이완 시간]<br>
-    α/β 기준: <b>${hypAb}</b><br>
-    후두부 α 기준: <b>${hypAl}</b>`;
-
-  $('expResultGrid').innerHTML=`
-    <div class="exp-result-box">
-      <div class="exp-result-label">α/β ratio 기준<br>이완 소요 시간</div>
-      <div class="exp-result-row">
-        <div><div style="font-size:10px;color:#1D9E75;margin-bottom:2px">${c1}</div><div class="exp-result-val" style="color:#1D9E75">${fmtT(r1ab)}</div></div>
-        <div><div style="font-size:10px;color:#378ADD;margin-bottom:2px">${c2}</div><div class="exp-result-val" style="color:#378ADD">${fmtT(r2ab)}</div></div>
-      </div>
-      <div class="exp-winner" style="background:rgba(29,158,117,0.15);color:var(--teal)">${hypAb}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:6px">BL α/β 기준: ${r.blAb.toFixed(3)}</div>
+  dc('expP1AbBar');dc('expP1AlphaBar');
+  const pctFmt=(v,bl)=>((v-bl)/bl*100).toFixed(1)+'%';
+  const winner=(v1,v2,n1,n2)=>v1>v2?`${n1}이 더 높음`:v1<v2?`${n2}이 더 높음`:'동일';
+  $('expResults').innerHTML=`
+  <div class="card">
+    <div class="card-title">이완도 지표 비교 (BL 대비)</div>
+    <div style="padding:8px 10px;background:var(--bg3);border-radius:var(--radius);border-left:2px solid var(--amber);font-size:11px;color:var(--text2);margin-bottom:12px">
+      BL α/β: <b>${blAb.toFixed(3)}</b> &nbsp;|&nbsp; BL 후두부 α: <b>${(blAlpha/1e6).toFixed(3)}×10⁶</b>
     </div>
-    <div class="exp-result-box">
-      <div class="exp-result-label">후두부 α 기준<br>이완 소요 시간</div>
-      <div class="exp-result-row">
-        <div><div style="font-size:10px;color:#1D9E75;margin-bottom:2px">${c1}</div><div class="exp-result-val" style="color:#1D9E75">${fmtT(r1al)}</div></div>
-        <div><div style="font-size:10px;color:#378ADD;margin-bottom:2px">${c2}</div><div class="exp-result-val" style="color:#378ADD">${fmtT(r2al)}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="exp-result-box">
+        <div class="exp-result-label">α/β ratio 평균</div>
+        <div class="exp-result-row">
+          <div><div style="font-size:10px;color:#1D9E75">${c1}</div><div class="exp-result-val" style="color:#1D9E75">${c1M.ab.toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">BL 대비 ${pctFmt(c1M.ab,blAb)}</div></div>
+          <div><div style="font-size:10px;color:#378ADD">${c2}</div><div class="exp-result-val" style="color:#378ADD">${c2M.ab.toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">BL 대비 ${pctFmt(c2M.ab,blAb)}</div></div>
+        </div>
+        <div class="exp-winner" style="background:rgba(186,117,23,0.15);color:var(--amber)">${winner(c1M.ab,c2M.ab,c1,c2)}</div>
       </div>
-      <div class="exp-winner" style="background:rgba(55,138,221,0.15);color:var(--blue)">${hypAl}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:6px">BL 후두부 α 기준: ${(r.blAlpha/1e6).toFixed(3)}×10⁶</div>
-    </div>`;
-
-  $('expAbNote').textContent=`BL 기준선 α/β = ${r.blAb.toFixed(3)} | 실선=${c1} / 점선=${c2}`;
-  $('expAlphaNote').textContent=`BL 기준선 후두부 α = ${(r.blAlpha/1e6).toFixed(3)}×10⁶`;
-
-  dc('expAbChart');dc('expAlphaChart');dc('expSegChart');
-
-  const labels=r.t1.timesAll.map(t=>t+'s');
-  charts['expAbChart']=new Chart($('expAbChart'),{type:'line',data:{labels,datasets:[
-    {label:c1,data:r.t1.abAll.map(v=>+v.toFixed(3)),borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
-    {label:c2,data:r.t2.abAll.map(v=>+v.toFixed(3)),borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[5,3]}
-  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:8,padding:8}}},scales:{x:{ticks:{color:TC,maxTicksLimit:10,font:{size:9}},grid:{color:GC},title:{display:true,text:'각성 시작 후 경과(s)',color:TC,font:{size:9}}},y:{ticks:{color:TC,font:{size:9}},grid:{color:GC},title:{display:true,text:'α/β ratio',color:TC,font:{size:9}}}}}});
-
-  charts['expAlphaChart']=new Chart($('expAlphaChart'),{type:'line',data:{labels,datasets:[
-    {label:c1,data:r.t1.alphaAll.map(v=>+(v/1e6).toFixed(4)),borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
-    {label:c2,data:r.t2.alphaAll.map(v=>+(v/1e6).toFixed(4)),borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[5,3]}
-  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:8,padding:8}}},scales:{x:{ticks:{color:TC,maxTicksLimit:10,font:{size:9}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:9}},grid:{color:GC},title:{display:true,text:'α ×10⁶',color:TC,font:{size:9}}}}}});
-
-  const sa=r.segAbs;
-  charts['expSegChart']=new Chart($('expSegChart'),{type:'bar',data:{labels:['BL','각성1',c1,'각성2',c2],datasets:[{data:[sa.bl,sa.ar1,sa.c1,sa.ar2,sa.c2].map(v=>+v.toFixed(3)),backgroundColor:['rgba(127,119,221,0.7)','rgba(216,90,48,0.7)','rgba(29,158,117,0.7)','rgba(186,117,23,0.7)','rgba(55,138,221,0.7)'],borderColor:['#7F77DD','#D85A30','#1D9E75','#BA7517','#378ADD'],borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{display:false}},y:{title:{display:true,text:'α/β ratio',color:TC,font:{size:10}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+      <div class="exp-result-box">
+        <div class="exp-result-label">후두부 α 파워 평균</div>
+        <div class="exp-result-row">
+          <div><div style="font-size:10px;color:#1D9E75">${c1}</div><div class="exp-result-val" style="color:#1D9E75;font-size:18px">${(c1M.alpha/1e6).toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">×10⁶ | ${pctFmt(c1M.alpha,blAlpha)}</div></div>
+          <div><div style="font-size:10px;color:#378ADD">${c2}</div><div class="exp-result-val" style="color:#378ADD;font-size:18px">${(c2M.alpha/1e6).toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">×10⁶ | ${pctFmt(c2M.alpha,blAlpha)}</div></div>
+        </div>
+        <div class="exp-winner" style="background:rgba(186,117,23,0.15);color:var(--amber)">${winner(c1M.alpha,c2M.alpha,c1,c2)}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">α/β ratio — BL · ${c1} · ${c2}</div><div class="chart-wrap" style="height:180px"><canvas id="expP1AbBar"></canvas></div></div>
+      <div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">후두부 α — BL · ${c1} · ${c2}</div><div class="chart-wrap" style="height:180px"><canvas id="expP1AlphaBar"></canvas></div></div>
+    </div>
+  </div>`;
+  charts['expP1AbBar']=new Chart($('expP1AbBar'),{type:'bar',data:{labels:['BL',c1,c2],datasets:[{data:[+blAb.toFixed(3),+c1M.ab.toFixed(3),+c2M.ab.toFixed(3)],backgroundColor:['rgba(127,119,221,0.7)','rgba(29,158,117,0.7)','rgba(55,138,221,0.7)'],borderColor:['#7F77DD','#1D9E75','#378ADD'],borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{display:false}},y:{title:{display:true,text:'α/β ratio',color:TC,font:{size:9}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
+  charts['expP1AlphaBar']=new Chart($('expP1AlphaBar'),{type:'bar',data:{labels:['BL',c1,c2],datasets:[{data:[+(blAlpha/1e6).toFixed(4),+(c1M.alpha/1e6).toFixed(4),+(c2M.alpha/1e6).toFixed(4)],backgroundColor:['rgba(127,119,221,0.7)','rgba(29,158,117,0.7)','rgba(55,138,221,0.7)'],borderColor:['#7F77DD','#1D9E75','#378ADD'],borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{display:false}},y:{title:{display:true,text:'α ×10⁶',color:TC,font:{size:9}},ticks:{color:TC,font:{size:9}},grid:{color:GC}}}}});
 }
+
+function renderPlan2({blAb,blAlpha,r1,r2,c1,c2}){
+  $('expResults').style.display='';
+  dc('expP2AbChart');dc('expP2AlphaChart');
+  const fmtT=v=>v!=null?v.toFixed(1)+'s':'미도달';
+  const winnerT=(a,b,n1,n2)=>{
+    if(a!=null&&b!=null)return a<b?`${n1}이 더 빠름 (${(b-a).toFixed(1)}s 차이)`:a>b?`${n2}이 더 빠름 (${(a-b).toFixed(1)}s 차이)`:'동일';
+    return a!=null?`${n2} 미도달`:b!=null?`${n1} 미도달`:'두 조건 모두 BL 미도달';
+  };
+  $('expResults').innerHTML=`
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">이완 소요 시간 + 이완 정도 비교</div>
+    <div style="padding:8px 10px;background:var(--bg3);border-radius:var(--radius);border-left:2px solid var(--amber);font-size:11px;color:var(--text2);margin-bottom:12px">
+      BL α/β: <b>${blAb.toFixed(3)}</b> &nbsp;|&nbsp; 각성유도 0–120s / 조건 구간 120s~ &nbsp;|&nbsp; 음영=각성 구간
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+      <div class="exp-result-box"><div class="exp-result-label">α/β 이완 소요 시간</div>
+        <div style="margin:6px 0"><div style="font-size:10px;color:#1D9E75">${c1}</div><div class="exp-result-val" style="color:#1D9E75">${fmtT(r1.relaxAb)}</div></div>
+        <div><div style="font-size:10px;color:#378ADD">${c2}</div><div class="exp-result-val" style="color:#378ADD">${fmtT(r2.relaxAb)}</div></div>
+        <div class="exp-winner" style="background:rgba(186,117,23,0.15);color:var(--amber);margin-top:6px">${winnerT(r1.relaxAb,r2.relaxAb,c1,c2)}</div>
+      </div>
+      <div class="exp-result-box"><div class="exp-result-label">후두부α 이완 소요 시간</div>
+        <div style="margin:6px 0"><div style="font-size:10px;color:#1D9E75">${c1}</div><div class="exp-result-val" style="color:#1D9E75">${fmtT(r1.relaxAlpha)}</div></div>
+        <div><div style="font-size:10px;color:#378ADD">${c2}</div><div class="exp-result-val" style="color:#378ADD">${fmtT(r2.relaxAlpha)}</div></div>
+        <div class="exp-winner" style="background:rgba(186,117,23,0.15);color:var(--amber);margin-top:6px">${winnerT(r1.relaxAlpha,r2.relaxAlpha,c1,c2)}</div>
+      </div>
+      <div class="exp-result-box"><div class="exp-result-label">조건 구간 α/β 평균</div>
+        <div style="margin:6px 0"><div style="font-size:10px;color:#1D9E75">${c1}</div><div class="exp-result-val" style="color:#1D9E75;font-size:20px">${r1.condAbMean.toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">BL 대비 ${((r1.condAbMean-blAb)/blAb*100).toFixed(1)}%</div></div>
+        <div><div style="font-size:10px;color:#378ADD">${c2}</div><div class="exp-result-val" style="color:#378ADD;font-size:20px">${r2.condAbMean.toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">BL 대비 ${((r2.condAbMean-blAb)/blAb*100).toFixed(1)}%</div></div>
+      </div>
+      <div class="exp-result-box"><div class="exp-result-label">조건 구간 α 파워 평균</div>
+        <div style="margin:6px 0"><div style="font-size:10px;color:#1D9E75">${c1}</div><div class="exp-result-val" style="color:#1D9E75;font-size:18px">${(r1.condAlphaMean/1e6).toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">×10⁶ | ${((r1.condAlphaMean-blAlpha)/blAlpha*100).toFixed(1)}%</div></div>
+        <div><div style="font-size:10px;color:#378ADD">${c2}</div><div class="exp-result-val" style="color:#378ADD;font-size:18px">${(r2.condAlphaMean/1e6).toFixed(3)}</div><div style="font-size:10px;color:var(--text3)">×10⁶ | ${((r2.condAlphaMean-blAlpha)/blAlpha*100).toFixed(1)}%</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="card"><div class="card-title">α/β ratio 시계열 <span style="font-size:9px;font-weight:400;color:var(--text3);text-transform:none">실선=${c1} / 점선=${c2}</span></div><div class="chart-wrap" style="height:220px"><canvas id="expP2AbChart"></canvas></div></div>
+    <div class="card"><div class="card-title">후두부 α 시계열</div><div class="chart-wrap" style="height:220px"><canvas id="expP2AlphaChart"></canvas></div></div>
+  </div>`;
+
+  const labels=r1.timesAll.map(t=>t+'s');
+  const arEndIdx=r1.abAll.findIndex((_,i)=>r1.timesAll[i]>=r1.arEnd);
+  const shadePlugin={id:'arShade',beforeDraw(chart){
+    const{ctx,chartArea:{top,bottom,left},scales:{x}}=chart;if(!x)return;
+    const xE=arEndIdx>=0?x.getPixelForValue(arEndIdx):left+80;
+    ctx.save();ctx.fillStyle='rgba(216,90,48,0.07)';ctx.fillRect(left,top,xE-left,bottom-top);ctx.restore();
+  }};
+  const mkOpts=(ytitle)=>({responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:8}}},scales:{x:{ticks:{color:TC,maxTicksLimit:12,font:{size:9}},grid:{color:GC},title:{display:true,text:'경과 시간(s)',color:TC,font:{size:9}}},y:{ticks:{color:TC,font:{size:9}},grid:{color:GC},title:{display:true,text:ytitle,color:TC,font:{size:9}}}}});
+  charts['expP2AbChart']=new Chart($('expP2AbChart'),{type:'line',data:{labels,datasets:[
+    {label:c1,data:r1.abAll.map(v=>+v.toFixed(3)),borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
+    {label:c2,data:r2.abAll.map(v=>+v.toFixed(3)),borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[5,3]}
+  ]},plugins:[shadePlugin],options:mkOpts('α/β ratio')});
+  charts['expP2AlphaChart']=new Chart($('expP2AlphaChart'),{type:'line',data:{labels,datasets:[
+    {label:c1,data:r1.alphaAll.map(v=>+(v/1e6).toFixed(4)),borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
+    {label:c2,data:r2.alphaAll.map(v=>+(v/1e6).toFixed(4)),borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[5,3]}
+  ]},plugins:[shadePlugin],options:mkOpts('α ×10⁶')});
+}
+
 </script>
 </body>
 </html>
